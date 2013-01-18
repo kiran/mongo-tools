@@ -1,4 +1,12 @@
 MongoTools::Application.routes.draw do
+  resources :explorer, :only => [:index, :show] do
+    scope :module => "explorer" do
+      resources :collections do
+        resources :documents
+      end
+    end
+  end
+  
   # The priority is based upon order of creation:
   # first created -> highest priority.
 

@@ -1,0 +1,2 @@
+module Explorer::DocumentsHelper
+end
