@@ -1,4 +1,9 @@
-# Overview
+
+
+[![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/brandonblack/mongo-tools)
+
+Overview
+========
 
 MongoDB is an open source, document-oriented database designed with both scalability and developer agility in mind. Instead of storing your data in tables and rows as you would with a relational database, in MongoDB you store JSON-like documents with dynamic schemas. The goal of MongoDB is to bridge the gap between key-value stores (which are fast and scalable) and relational databases (which have rich functionality).
 
@@ -9,7 +14,8 @@ Experience with MongoDB is a highly sought after skill that many employers are s
 More about MongoDB: <http://www.mongodb.org><br>
 More about 10gen: <http://www.10gen.com>
 
-# Objectives
+Objectives
+==========
 
 Our goal for this project is to kick-off a new effort to bring better tooling to MongoDB in an all-in-one, portable, and easy to deploy package. This project will be highly visible, community facing, and our goal is to make it as valuable to MongoDB new comers as it is to veteran users.
 
@@ -28,7 +34,8 @@ Here are a few things we'd eventually like to tackle:
 
 It's not the intention that all or even most of these things get completed during this course, but we'd like to present all the options we've got on our roadmap so that the students involved can select the components that they're most interested in contributing on. 
 
-# Requirements
+Requirements
+============
 
 This project will be a browser-based application, but the goal is to make it extremely portable, easy to setup and cross-platform compatible. We'll be developing the application using the latest version of Ruby on Rails, and Ruby 1.9 running on the latest version of JRuby.
 
@@ -40,7 +47,8 @@ Tools we're planning on using:
 * JRuby 1.7.x (Ruby 1.9)
 * Jetpack
 
-# Evaluation
+Evaluation
+==========
 
 At the end of the course, each student will be evaluated based on the following:
 
@@ -48,6 +56,7 @@ At the end of the course, each student will be evaluated based on the following:
 * Experience and knowledge gained working with the open-source community.
 * Overall contribution to the project.
 
-# Contacts
+Contacts
+========
 Bernie Hackett (<bernie@10gen.com>)
 Brandon Black (@brandonmblack, <brandon.black@10gen.com>)
