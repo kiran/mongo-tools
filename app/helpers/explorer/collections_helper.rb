@@ -1,0 +1,2 @@
+module Explorer::CollectionsHelper
+end
