@@ -1,1 +1,10 @@
-<h1>Explorer Index</h1>
+<% content_for :sidebar do %>
+<div class="well well-thin sidebar-nav">
+  <ul class="nav nav-list">
+    <li class="nav-header">Databases</li>
+    <% all_databases.each do |d| %>
+    <li><%= link_to d, explorer_path(d) %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
