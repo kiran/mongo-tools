@@ -33,6 +33,8 @@ GEM
     bson_ext (1.8.2)
       bson (~> 1.8.2)
     builder (3.0.4)
+    codemirror-rails (3.00)
+      railties (~> 3.0)
     coderay (1.0.8)
     commonjs (0.2.6)
     daemons (1.1.9)
@@ -170,6 +172,7 @@ PLATFORMS
 
 DEPENDENCIES
   bson_ext
+  codemirror-rails
   growl
   guard-rails
   guard-rspec

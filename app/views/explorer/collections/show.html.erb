@@ -14,6 +14,11 @@
 <% if current_database.collection_names.include? current_collection_name %>
 <h2><%= current_collection_name %></h2>
 
+<div class="row-fluid">
+  <textarea id="collection-terminal"kjahdkahd></textarea>
+</div>
+
+
 <% current_collection.find.each do |document| %>
 <pre><%= document.to_json %></pre>
 <% end %>
