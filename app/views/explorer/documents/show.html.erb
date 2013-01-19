@@ -1,0 +1,14 @@
+<% content_for :sidebar do %>
+<%= render :partial => "shared/collections_sidebar" %>
+<% end %>
+
+<% if current_document %>
+<h3><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / <%= current_document_id %></h3>
+
+<pre><%= current_document.to_json %></pre>
+<% else %>
+<div class="alert alert-error">
+  <strong>Error!</strong>
+  That document doesn't exist
+</div>
+<% end %>

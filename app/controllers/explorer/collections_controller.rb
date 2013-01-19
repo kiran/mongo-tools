@@ -1,4 +1,4 @@
-class Explorer::CollectionsController < ApplicationController
+class Explorer::CollectionsController < ExplorerController
   def index
     redirect_to explorer_path(current_database_name)
   end
