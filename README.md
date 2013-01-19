@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/brandonblack/mongo-tools.png)](https://travis-ci.org/brandonblack/mongo-tools)
-
-[![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/brandonblack/mongo-tools)
+[![Build Status](https://travis-ci.org/brandonblack/mongo-tools.png)](https://travis-ci.org/brandonblack/mongo-tools) [![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/brandonblack/mongo-tools)
 
 Overview
 ========

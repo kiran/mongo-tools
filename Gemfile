@@ -5,7 +5,7 @@ gem 'jquery-rails'
 gem 'jbuilder'
 
 gem 'mongo_mapper'
-gem 'bson_ext'
+gem 'bson_ext' unless RUBY_PLATFORM =~ /java/
 gem 'rufus-scheduler'
 
 gem 'less-rails'
