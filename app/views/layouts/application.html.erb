@@ -47,9 +47,7 @@
           <%= link_to image_tag("logo.png", alt: "MongoTools"), root_path, class: "brand" %>
           <div class="container-fluid nav-collapse">
             <ul class="nav">
-              <li><%= link_to "Link1", "/path1"  %></li>
-              <li><%= link_to "Link2", "/path2"  %></li>
-              <li><%= link_to "Link3", "/path3"  %></li>
+              <li class="<%= params[:controller].start_with?("explorer") ? "active" : "" %>"><%= link_to "Explorer", explorer_index_path %></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
