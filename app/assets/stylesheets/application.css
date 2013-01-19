@@ -10,4 +10,9 @@
  *
  *= require_self
  *= require_tree .
+ *= require codemirror
+ *= require codemirror/themes/solarized
+ *= require codemirror/themes/xq-dark
+ *= require codemirror/themes/night
+ *= require codemirror/themes/twilight
  */

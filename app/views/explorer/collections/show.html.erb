@@ -5,6 +5,10 @@
 <% if current_database.collection_names.include? current_collection_name %>
 <h3><%= current_collection_name %></h3>
 
+<div class="row-fluid">
+  <textarea id="collection-terminal"></textarea>
+</div>
+
 <table class="table table-bordered">
   <% current_collection.find.each do |document| %>
   <tr>

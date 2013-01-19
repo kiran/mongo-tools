@@ -11,6 +11,8 @@ gem 'rufus-scheduler'
 gem 'less-rails'
 gem 'twitter-bootstrap-rails'
 
+gem 'codemirror-rails'
+
 group :assets do
   gem 'uglifier', '>= 1.0.3'
   gem 'therubyracer', :platforms => :ruby
