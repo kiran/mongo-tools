@@ -8,6 +8,7 @@ gem 'mongo_mapper'
 gem 'bson_ext'
 gem 'rufus-scheduler'
 
+gem 'less-rails'
 gem 'twitter-bootstrap-rails'
 
 group :assets do
