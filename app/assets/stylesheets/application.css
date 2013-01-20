@@ -10,6 +10,7 @@
  *
  *= require_self
  *= require_tree .
+ *= require formtastic-bootstrap
  *= require codemirror
  *= require codemirror/themes/solarized
  *= require codemirror/themes/xq-dark

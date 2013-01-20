@@ -9,7 +9,7 @@ class ExplorerController < ApplicationController
   
   protected
     def check_mongo_blacklist
-      if !can_read_database?
+      if current_database_name && !can_read_database?
         render "shared/blacklist"
         return
       end
