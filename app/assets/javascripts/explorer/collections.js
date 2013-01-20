@@ -38,15 +38,16 @@ $(function () {
 
   filters.keydown(function (e) {
     e = $.event.fix(e);
-    console.log(e.which);
     if (e.which == 13) {
       // Make enter submit the form
       e.preventDefault();
       $(this).parents("form").submit();
     } else if (e.which == 8 || e.which == 46) {
-      // Try to detect the length of the contenteditable field
-      // If empty... insert &#8203
-      //e.preventDefault();
+      var parent = document.getSelection().anchorNode.parentNode;
+      if ($(parent).is(filters) && ($(parent).text() == document.getSelection().toString() || $(parent).html("&#8203;"))) {
+        $(parent).html("&#8203;")
+        e.preventDefault();
+      }
     }
   });
 
