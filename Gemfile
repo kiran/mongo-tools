@@ -13,6 +13,9 @@ gem 'twitter-bootstrap-rails'
 
 gem 'codemirror-rails'
 
+gem 'formtastic'
+gem 'formtastic-bootstrap'
+
 group :assets do
   gem 'uglifier', '>= 1.0.3'
   gem 'therubyracer', :platforms => :ruby
