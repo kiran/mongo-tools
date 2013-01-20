@@ -1,7 +1,7 @@
 <% content_for :sidebar do %>
-<div class="well well-thin sidebar-nav">
-</div>
+<%= render :partial => "shared/collections_sidebar" %>
 <% end %>
+
 
 <form method="post" id="new-document-form" action="<%= explorer_collection_documents_path(current_database_name, current_collection_name) %>">
     <fieldset>
