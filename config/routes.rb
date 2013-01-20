@@ -9,6 +9,7 @@ MongoTools::Application.routes.draw do
 
   get "/monitoring" => "monitoring#index"
 
+  resources :query_analyzer, :only => [:index]
   root :to => redirect("/explorer")
   # The priority is based upon order of creation:
   # first created -> highest priority.
