@@ -29,11 +29,32 @@ $(function () {
     };
   }
 
+  // Bug fix: prevents breaking the contenteditable box
+  // Inserts a zero width space when the content is empty
+  var filters = $('#collection-form .params span[contenteditable=true]');
+  filters.keyup(function () {
+    filters.filter(":empty").html("&#8203;");
+  });
+
+  filters.keydown(function (e) {
+    e = $.event.fix(e);
+    console.log(e.which);
+    if (e.which == 13) {
+      // Make enter submit the form
+      e.preventDefault();
+      $(this).parents("form").submit();
+    } else if (e.which == 8 || e.which == 46) {
+      // Try to detect the length of the contenteditable field
+      // If empty... insert &#8203
+      //e.preventDefault();
+    }
+  });
+
   // Hide the respective span elements on click
   $('#collection-form .buttons button.btn-inverse').click(function () {
     $(this).toggleClass('active');
     $('#span-' + $(this).data()['field']).toggle();
     return false;
   });
-  
+
 });
