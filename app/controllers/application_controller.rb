@@ -1,7 +1,7 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
-  helper_method :can_read?, :can_edit?, :can_edit_collection?, :can_edit_database?, :can_read_collection?, :can_read_database?,
-                :current_collection_name, :current_database_name, :current_document_id
+  helper_method :can_read?, :can_edit?, :can_edit_collection?, :can_edit_database?, :can_read_collection?,
+                :can_read_database?, :current_collection_name, :current_database_name, :current_document_id
   
   protected
     def current_database_name
