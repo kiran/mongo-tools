@@ -12,6 +12,18 @@ if (document.getElementById("new-document-editor")) {
     matchBrackets: 1
   });
 }
+if (document.getElementById("edit-document-editor")) {
+  var newEditor = CodeMirror.fromTextArea(document.getElementById("edit-document-editor"), {
+    path: "/assets/codemirror",
+    mode: {
+        name: "javascript",
+        json: !0
+    },
+    indentUnit: 2,
+    matchBrackets: 1,
+    formatting: 1
+  });
+}
 
 var sanitizeRegex = function (e) {
             var t, n, r;
