@@ -1,15 +1,17 @@
 // Place all the behaviors and hooks related to the matching controller here.
 // All this logic will automatically be available in application.js.
 
-var newEditor = CodeMirror.fromTextArea(document.getElementById("new-document-editor"), {
-  path: "/assets/codemirror",
-  mode: {
-      name: "javascript",
-      json: !0
-  },
-  indentUnit: 2,
-  matchBrackets: 1
-});
+if (document.getElementById("new-document-editor")) {
+  var newEditor = CodeMirror.fromTextArea(document.getElementById("new-document-editor"), {
+    path: "/assets/codemirror",
+    mode: {
+        name: "javascript",
+        json: !0
+    },
+    indentUnit: 2,
+    matchBrackets: 1
+  });
+}
 
 var sanitizeRegex = function (e) {
             var t, n, r;
