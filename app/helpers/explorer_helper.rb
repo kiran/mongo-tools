@@ -1,6 +1,6 @@
 module ExplorerHelper
   def all_databases
-    @all_databases ||= MongoMapper.connection.database_names.sort.reject { |i| DATABASE_BLACKLIST.include? i }
+    @all_databases ||= MongoMapper.connection.database_names.sort.select { |d| can_read?(d) }
   end
   
   def current_database

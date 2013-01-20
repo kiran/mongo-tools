@@ -3,7 +3,7 @@
     <li class="nav-header">Database: <%= current_database_name %></li>
     <li class="divider"></li>
     <li class="nav-header">Collections</li>
-    <% current_database.collection_names.sort.each do |c| %>
+    <% current_database.collection_names.sort.select { |c| can_read_collection?(current_database_name, c) }.each do |c| %>
     <li class="<%= current_collection_name == c ? "active" : "" %>"><%= link_to c, explorer_collection_path(current_database_name, c) %></li>
     <% end %>
     <li class="divider"></li>

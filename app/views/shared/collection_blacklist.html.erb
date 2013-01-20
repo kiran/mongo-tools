@@ -4,5 +4,5 @@
 
 <div class="alert alert-error">
   <strong>Error!</strong>
-  Documents in this collection are not allowed to be viewed
+  Documents in this collection are not allowed to be <%= can_read_collection? && !can_edit_collection? ? "edited" : "viewed" %>
 </div>

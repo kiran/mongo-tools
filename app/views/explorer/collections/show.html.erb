@@ -5,7 +5,7 @@
 <% if current_database.collection_names.include? current_collection_name %>
 <div class="page-header">
   <h3 class="di"><%= current_collection_name %></h3>
-  <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" %></small>
+  <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>
 </div>
 
 <form id="collection-form" class="query-form" name="query">
@@ -58,7 +58,7 @@
   <% current_collection.find.each do |document| %>
   <tr>
     <td>
-      <% if document.has_key?("_id") && !COLLECTION_BLACKLIST.include?(current_collection_name) %>
+      <% if document.has_key?("_id") %>
       <%= link_to JSON.generate(JSON.parse(document.to_json), space: " ", indent: " "), explorer_collection_document_path(current_database_name, current_collection_name, document["_id"]) %>
       <% else %>
       <%= JSON.generate(JSON.parse(document.to_json), space: " ", indent: " ") %>
