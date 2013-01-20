@@ -17,4 +17,5 @@
 //= require codemirror
 //= require codemirror/modes/javascript
 //= require codemirror/utils/javascript-hint
+//= require codemirror/utils/matchbrackets
 //= require_tree .

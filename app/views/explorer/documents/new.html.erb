@@ -1,0 +1,12 @@
+<% content_for :sidebar do %>
+<div class="well well-thin sidebar-nav">
+</div>
+<% end %>
+
+<form method="post" id="new-document-form" action="<%= explorer_collection_documents_path(current_database_name, current_collection_name) %>">
+    <fieldset>
+        <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / New Document</legend>
+        <textarea id="new-document-editor" name="query"><%= @query %></textarea>
+        <button type="submit" class="btn">Save Document</button>
+    </fieldset>  
+</form>
