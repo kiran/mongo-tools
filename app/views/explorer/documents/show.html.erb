@@ -5,7 +5,7 @@
 <% if current_document %>
 <div class="page-header">
   <h3 class="di"><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / <%= current_document_id %></h3>
-  <small><%= link_to "Edit Document", edit_explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), class: "btn pull-right" %></small>
+  <small><%= link_to "Edit Document", edit_explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), class: "btn pull-right" if can_edit? %></small>
 </div>
 
 <pre><%= current_document.to_json %></pre>
