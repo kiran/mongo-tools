@@ -48,6 +48,7 @@
           <div class="container-fluid nav-collapse">
             <ul class="nav">
               <li class="<%= params[:controller].start_with?("explorer") ? "active" : "" %>"><%= link_to "Explorer", explorer_index_path %></li>
+              <li class="<%= params[:controller].start_with?("monitoring") ? "active" : "" %>"><%= link_to "Monitoring", monitoring_path %></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
