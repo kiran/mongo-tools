@@ -8,45 +8,69 @@
   <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>
 </div>
 
-<div class="collection-query">
-  <form id="collection-form" name="query">
-      <div class="interface">
-        <div class="params">
-          <span>
-            find(<span id="span-query" style>
-              {
-              <span spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
-              }
-              </span><span id="span-fields" style>
-              , {
-              <span spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
-              }
-            </span>)
-          </span><span id="span-sort" style>
-            .sort({
-            <span spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
-            })
-          </span><span id="span-skip" style>
-            .skip(
-            <span spellcheck="false" contenteditable="true" data-type="hash" data-name="skip">&#8203;</span>
-            )
-          </span><span id="span-limit" style>
-            .limit(
-          <span spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
-            )
-          </span><span id="span-explain" style>
-            .explain()
-          </span>
-        </div>
-      <div class="buttons">
-        <button class="btn btn-inverse active" data-field="fields">fields{}</button>
-        <button class="btn btn-inverse active" data-field="sort">sort()</button>
-        <button class="btn btn-inverse active" data-field="skip">skip()</button>
-        <button class="btn btn-inverse active" data-field="explain">explain()</button>
-        <button class="btn pull-right" type="submit">Query</button>
+
+<div id="wrapper">
+  <div id="tabContainer">
+    <div class="tabs">
+      <ul>
+        <li id="tabHeader_1">Query</li>
+        <li id="tabHeader_2">Ruby</li>
+        <li id="tabHeader_3">Python</li>
+      </ul>
+    </div>
+    <div class="tabscontent">
+      <div class="tabpage" id="tabpage_1">
+        <div class="collection-query">
+          <form id="collection-form" name="query">
+              <div class="interface">
+                <div class="params">
+                  <span>
+                    find(<span id="span-query" style>
+                      {
+                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
+                      }
+                      </span><span id="span-fields" style>
+                      , {
+                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
+                      }
+                    </span>)
+                  </span><span id="span-sort" style>
+                    .sort({
+                    <span spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
+                    })
+                  </span><span id="span-skip" style>
+                    .skip(
+                    <span spellcheck="false" contenteditable="true" data-type="hash" data-name="skip">&#8203;</span>
+                    )
+                  </span><span id="span-limit" style>
+                    .limit(
+                  <span spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
+                    )
+                  </span><span id="span-explain" style>
+                    .explain()
+                  </span>
+                </div>
+              <div class="buttons">
+                <button class="btn btn-inverse active" data-field="fields">fields{}</button>
+                <button class="btn btn-inverse active" data-field="sort">sort()</button>
+                <button class="btn btn-inverse active" data-field="skip">skip()</button>
+                <button class="btn btn-inverse active" data-field="explain">explain()</button>
+                <button class="btn pull-right" type="submit">Query</button>
+              </div>
+            </div>
+          </form>
+        </div> 
+      </div>
+      <div class="tabpage" id="tabpage_2">
+        <h2>Ruby</h2>
+        <p>Eventually will have Ruby syntax for the query here....</p>
+      </div>
+      <div class="tabpage" id="tabpage_3">
+        <h2>Python</h2>
+        <p>Eventually will have Python syntax for the query here...</p>
       </div>
     </div>
-  </form>
+  </div>
 </div>
 
 <table class="table table-bordered">
