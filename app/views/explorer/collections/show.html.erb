@@ -9,18 +9,16 @@
 </div>
 
 
-<div id="wrapper">
-  <div id="tabs-container">
-    <div class="tabs">
-      <ul>
-        <li id="tab-header1">Query</li>
-        <li id="tab-header2">Ruby</li>
-        <li id="tab-header3">Python</li>
-      </ul>
-    </div>
-    <div class="tabs-content">
-      <div class="tab-page" id="tab-page1">
-        <div class="collection-query">
+
+<div class="tabbable"> <!-- Only required for left/right tabs -->
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#tab1" data-toggle="tab">Query</a></li>
+    <li><a href="#tab2" data-toggle="tab">Ruby</a></li>
+    <li><a href="#tab2" data-toggle="tab">Python</a></li>
+  </ul>
+  <div class="tab-content">
+    <div class="tab-pane active" id="tab1">
+      <div class="collection-query">
           <form id="collection-form" name="query">
               <div class="interface">
                 <div class="params">
@@ -59,19 +57,19 @@
               </div>
             </div>
           </form>
-        </div> 
-      </div>
-      <div class="tab-page" id="tab-page2">
-        <h2>Ruby</h2>
-        <p>Eventually will have Ruby syntax for the query here....</p>
-      </div>
-      <div class="tab-page" id="tab-page3">
-        <h2>Python</h2>
-        <p>Eventually will have Python syntax for the query here...</p>
-      </div>
+        </div>
+    </div>
+    <div class="tab-pane" id="tab2">
+      <p>Eventually have Ruby syntax for the query.</p>
+    </div>
+    <div class="tab-pane" id="tab3">
+      <p>Eventually have Python syntax for the query.</p>
     </div>
   </div>
 </div>
+
+
+        
 
 <table class="table table-bordered">
   <% current_collection.find.each do |document| %>
