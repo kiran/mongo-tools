@@ -1,18 +1,6 @@
 // Place all the behaviors and hooks related to the matching controller here.
 // All this logic will automatically be available in application.js.
 
-if (document.getElementById("new-document-editor")) {
-  var newEditor = CodeMirror.fromTextArea(document.getElementById("new-document-editor"), {
-    path: "/assets/codemirror",
-    mode: {
-        name: "javascript",
-        json: !0
-    },
-    indentUnit: 2,
-    matchBrackets: 1
-  });
-}
-
 var sanitizeRegex = function (e) {
             var t, n, r;
             for (t in e) r = e[t], r instanceof RegExp ? (n = r.toString().match(/^\/(.*)\/([gim]*)$/), e[t] = {
@@ -69,7 +57,7 @@ var bsonEval = function (bson) {
     }
 };
 
-$(document).ready(function() {
+$(function() {
   $("#new-document-form").submit(function() {
       var editorVal = newEditor.getValue();
       var evaled = bsonEval(editorVal);
@@ -77,4 +65,25 @@ $(document).ready(function() {
       alert($("#new-document-editor").val());
       return true;
   });
+  
+  $('.formatted').each(function() {
+      var $this = $(this);
+
+      var field = CodeMirror.fromTextArea(this, {
+          readOnly: !$this.is('.readonly'),
+          path: "/assets/codemirror",
+          mode: {
+              name: "javascript",
+              json: !0
+          },
+          tabSize: 2,
+          matchBrackets: 1
+      });
+    
+      var totalLines = field.lineCount();
+      var totalChars = field.getTextArea().value.length;
+      field.autoFormatRange({line:0, ch:0}, {line:totalLines, ch:totalChars});
+      field.setCursor({line:0,chr:0});
+  });
+  
 });

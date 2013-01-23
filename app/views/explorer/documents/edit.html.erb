@@ -1,0 +1,12 @@
+<% content_for :sidebar do %>
+<%= render :partial => "shared/collections_sidebar" %>
+<% end %>
+
+
+<form method="post" id="edit-document-form" action="<%= explorer_collection_documents_path(current_database_name, current_collection_name) %>">
+    <fieldset>
+        <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / Edit Document</legend>
+        <textarea id="edit-document-editor" name="query" class="formatted"><%= current_document.to_json %></textarea>
+        <button type="submit" class="btn">Save Document</button>
+    </fieldset>  
+</form>

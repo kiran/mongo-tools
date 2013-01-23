@@ -19,6 +19,6 @@ class Explorer::DocumentsController < ExplorerController
   
   def new
     new_id = BSON::ObjectId.new
-    @query = "{\n\s\s_id: ObjectId(\""+new_id+"\")\n}"
+    @query = "{_id: ObjectId(\""+new_id+"\")}"
   end
 end
