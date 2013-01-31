@@ -85,7 +85,6 @@ $(function() {
             var evaled = bsonEval(editorVal);
             var json = JSON.stringify(evaled, null, 2);
             $this.val(json);
-            alert($this.val());
             return true;
       });
   });

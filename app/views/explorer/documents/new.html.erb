@@ -3,10 +3,10 @@
 <% end %>
 
 
-<form method="post" id="new-document-form" action="<%= explorer_collection_documents_path(current_database_name, current_collection_name) %>">
+<%= form_tag(explorer_collection_documents_path(current_database_name, current_collection_name), :method => :post) do %>
     <fieldset>
-        <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / New Document</legend>
-        <textarea id="new-document-editor" name="query" class="formatted"><%= @query %></textarea>
-        <button type="submit" class="btn">Save Document</button>
+        <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / Edit Document</legend>
+        <%= text_area_tag 'query', @query, :class => 'formatted' %>
+        <%= submit_tag 'Save Document', :class => 'btn' %>
     </fieldset>  
-</form>
+<% end %>
