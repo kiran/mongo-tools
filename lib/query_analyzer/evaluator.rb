@@ -4,7 +4,7 @@ require 'mongo'
 require 'pp' #debug purposes
 def debug (*xs)
     xs.each do |x|
-        PP::pp(x, $>, 50)
+        PP::pp(x, $>, 65)
     end
 end
 
@@ -83,7 +83,7 @@ class Evaluator
     def handle_multiple(namespace, field, operator_arg)
         res = []
         operator_arg.each do |query|
-            res += evaluate_query(query, namespace)
+            res += _evaluate_query(query, namespace)
         end
         return res
     end
@@ -228,23 +228,11 @@ class Evaluator
         return res
     end
 
-    # evaluates the whole query
-    # @returns an array of EvaluationResult objects
-    # query hash is the decoded query json, e.g.
-    # {
-    #   "B" => {"$in" => [24.0, 25.0]},
-    #   "A" => {"$gt" => 27.3, "$lt" => 1000.0}
-    # }
-    def evaluate_query(query_hash, namespace)
+    def _evaluate_query(query_hash, namespace)
         out = []
-
-        # TODO
-        out += check_for_indexes query_hash
-
         query_hash.each do |key, val|
             field = nil
             operator_hash = nil
-
             if key.start_with? '$' then
                 #e.g. $or => [query1, query2, ...]
                 operator_hash = { key => val }
@@ -259,6 +247,24 @@ class Evaluator
             end
 
             out += self.handle_single_field 'namespace', field, operator_hash
+        end
+        return out
+    end
+    # evaluates the whole query
+    # @returns an array of EvaluationResult objects
+    # query hash is the decoded query json, e.g.
+    # {
+    #   "B" => {"$in" => [24.0, 25.0]},
+    #   "A" => {"$gt" => 27.3, "$lt" => 1000.0}
+    # }
+    def evaluate_query(query_hash, namespace)
+        out = []
+
+        # TODO
+        out += check_for_indexes query_hash
+
+        query_hash.each do |key, val|
+            out += self._evaluate_query(val,namespace) if key == "query"
         end
         return out
     end
