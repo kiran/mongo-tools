@@ -12,6 +12,6 @@ module ExplorerHelper
   end
   
   def current_document
-    @current_document ||= current_document_id ? current_collection.find_one(BSON::ObjectId.from_string(current_document_id)) : nil
+    @current_document ||= current_document_id ? current_collection.find_one(BSON::ObjectId(current_document_id)) : nil
   end
 end

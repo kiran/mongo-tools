@@ -7,6 +7,7 @@
     <fieldset>
         <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / Edit Document</legend>
         <%= text_area_tag 'query', current_document.to_json, :class => 'formatted' %>
-        <%= submit_tag 'Save Document', :class => 'btn' %>
+        <%= link_to 'Delete', explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :delete,  :class=> 'btn' %>
+        <%= submit_tag 'Save Document',:class => 'btn btn-primary' %>
     </fieldset>  
 <% end %>
