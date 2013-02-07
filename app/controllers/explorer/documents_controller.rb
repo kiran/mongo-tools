@@ -9,9 +9,7 @@ class Explorer::DocumentsController < ExplorerController
   end
   
   def create
-    conn = MongoMapper.connection
-    db = conn.db(current_database_name)
-    coll = db.collection(current_collection_name)
+    coll = current_collection
     #If there's a JSON parsing problem, show the error to user
     #and allow them to try again.
     begin
@@ -29,19 +27,13 @@ class Explorer::DocumentsController < ExplorerController
   end
   
   def destroy
-    conn = MongoMapper.connection
-    db = conn.db(current_database_name)
-    coll = db.collection(current_collection_name)
+    coll = current_collection
     coll.remove({'_id' => BSON::ObjectId(current_document_id)})
     redirect_to explorer_collection_path(current_database_name, current_collection_name)
   end
   
   def edit
-    conn = MongoMapper.connection
-    db = conn.db(current_database_name)
-    coll = db.collection(current_collection_name)
-    doc = coll.find_one({'_id' => BSON::ObjectId(current_document_id)})
-    @query = doc.to_json    
+    @query = current_document.to_json
   end
   
   def new
@@ -50,9 +42,7 @@ class Explorer::DocumentsController < ExplorerController
   end
   
   def update
-    conn = MongoMapper.connection
-    db = conn.db(current_database_name)
-    coll = db.collection(current_collection_name)
+    coll = current_collection
 
     #If there's a JSON parsing problem, show the error to user
     #and allow them to try again.

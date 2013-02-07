@@ -1,7 +1,8 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
   helper_method :can_read?, :can_edit?, :can_edit_collection?, :can_edit_database?, :can_read_collection?,
-                :can_read_database?, :current_collection_name, :current_database_name, :current_document_id
+                :can_read_database?, :current_collection_name, :current_database_name, :current_document_id,
+                :current_database, :current_collection, :current_document
   
   protected
     def current_database_name
@@ -14,6 +15,18 @@ class ApplicationController < ActionController::Base
     
     def current_document_id
       current_collection_name && params[:controller] == "explorer/documents" ? params[:id] : nil
+    end
+    
+    def current_database
+      @current_database ||= current_database_name ? MongoMapper.connection[current_database_name] : nil
+    end
+  
+    def current_collection
+      @current_collection ||= current_collection_name ? current_database.collection(current_collection_name) : nil
+    end
+  
+    def current_document
+      @current_document ||= current_document_id ? current_collection.find_one(BSON::ObjectId(current_document_id)) : nil
     end
 
     def can_read?(db = nil, coll = nil)
