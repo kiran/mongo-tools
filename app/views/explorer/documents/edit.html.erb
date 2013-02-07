@@ -6,8 +6,8 @@
 <%= form_tag(explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :put) do %>
     <fieldset>
         <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / Edit Document</legend>
-        <%= text_area_tag 'query', current_document.to_json, :class => 'formatted' %>
-        <%= link_to 'Delete', explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :delete,  :class=> 'btn' %>
+        <%= text_area_tag 'query', @query, :class => 'formatted' %>
+        <%= link_to 'Delete', explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :delete,  :class=> 'btn' :confirm => 'Are you sure you want to delete the document?' %>
         <%= submit_tag 'Save Document',:class => 'btn btn-primary' %>
     </fieldset>  
 <% end %>

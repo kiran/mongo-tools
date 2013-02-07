@@ -12,12 +12,20 @@ class Explorer::DocumentsController < ExplorerController
     conn = MongoMapper.connection
     db = conn.db(current_database_name)
     coll = db.collection(current_collection_name)
-    json = JSON.parse(params[:query])
-    if json.has_key?('_id')
-      json["_id"] = BSON::ObjectId(json["_id"])
+    #If there's a JSON parsing problem, show the error to user
+    #and allow them to try again.
+    begin
+      json = JSON.parse(params[:query])
+      if json.has_key?('_id')
+        json["_id"] = BSON::ObjectId(json["_id"])
+      end
+      coll.insert(json)
+      redirect_to explorer_collection_path(current_database_name, current_collection_name)
+    rescue JSON::ParserError => exc
+      flash[:error] = "Error in parsing JSON"
+      @query = params[:query]
+      render :action => :new
     end
-    coll.insert(json)
-    redirect_to explorer_collection_path(current_database_name, current_collection_name)
   end
   
   def destroy
@@ -26,6 +34,14 @@ class Explorer::DocumentsController < ExplorerController
     coll = db.collection(current_collection_name)
     coll.remove({'_id' => BSON::ObjectId(current_document_id)})
     redirect_to explorer_collection_path(current_database_name, current_collection_name)
+  end
+  
+  def edit
+    conn = MongoMapper.connection
+    db = conn.db(current_database_name)
+    coll = db.collection(current_collection_name)
+    doc = coll.find_one({'_id' => BSON::ObjectId(current_document_id)})
+    @query = doc.to_json    
   end
   
   def new
@@ -37,16 +53,25 @@ class Explorer::DocumentsController < ExplorerController
     conn = MongoMapper.connection
     db = conn.db(current_database_name)
     coll = db.collection(current_collection_name)
-    json = JSON.parse(params[:query])
-    id = nil
-    if json.has_key?('_id')
-      id = BSON::ObjectId(json["_id"])
-      json.delete("_id")
-    else
-      id = BSON::ObjectId(current_document_id)
-    end
+
+    #If there's a JSON parsing problem, show the error to user
+    #and allow them to try again.
+    begin
+      json = JSON.parse(params[:query])
+      id = nil
+      if json.has_key?('_id')
+        id = BSON::ObjectId(json["_id"])
+        json.delete("_id")
+      else
+        id = BSON::ObjectId(current_document_id)
+      end
     
-    coll.update({'_id' => id}, json)
-    redirect_to explorer_collection_document_path(current_database_name, current_collection_name)
+      coll.update({'_id' => id}, json)
+      redirect_to explorer_collection_document_path(current_database_name, current_collection_name)
+    rescue JSON::ParserError => exc
+      flash[:error] = "Error in parsing JSON"
+      @query = params[:query]
+      render :action => :edit
+    end
   end
 end
