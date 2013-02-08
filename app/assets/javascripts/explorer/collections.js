@@ -3,6 +3,34 @@
 
 $(function () {
 
+  // query functions
+  function validateHash(elem) {
+    t = '{' + sanitizedElementText(elem) + '}';
+    validateQuery(elem, t);
+  };
+
+  function validateQuery(elem, query) {
+    try {
+      eval('(' + query + ')');
+      $(elem).css({ 'border-bottom-color': 'white' });
+    } catch (e) {
+      $(elem).css({ 'border-bottom-color': 'red' });
+    }
+  };
+
+  function validateNumber(elem) {
+    if (isNaN(sanitizedElementText(elem))) {
+      $(elem).css({ 'border-bottom-color': 'red' });
+    } else {
+      $(elem).css({ 'border-bottom-color': 'white' });
+    }
+  }
+
+  function sanitizedElementText(elem) {
+    return $("<div></div>").html($(elem).html().replace(/[\u200B-\u200D\uFEFF]/g, '')).text();
+  };
+
+  // codemirror
   var $terminal = $("#collection-terminal");
 
   // Ensure we have a terminal
@@ -28,6 +56,12 @@ $(function () {
   var filters = $('#collection-form .params span[contenteditable=true]');
   filters.keyup(function () {
     filters.filter(":empty").html("&#8203;");
+
+    if ($(this).data("type") == "hash") {
+      validateHash(this);
+    } else if ($(this).data("type") == "number") {
+      validateNumber(this);
+    }
   });
 
   filters.keydown(function (e) {
@@ -38,7 +72,7 @@ $(function () {
       $(this).parents("form").submit();
     } else if (e.which == 8 || e.which == 46) {
       var parent = document.getSelection().anchorNode.parentNode;
-      if ($(parent).is(filters) && ($(parent).text() == document.getSelection().toString() || $(parent).html("&#8203;"))) {
+      if ($(parent).is(filters) && ($(parent).text() == document.getSelection().toString() || $(parent).html() == "&#8203;")) {
         $(parent).html("&#8203;")
         e.preventDefault();
       }
