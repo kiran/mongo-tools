@@ -47,8 +47,13 @@ class Evaluator
   # @returns an array of EvaluationResult objects
   # query hash is the decoded query json, e.g.
   # {
-  #   "B" => {"$in" => [24.0, 25.0]},
-  #   "A" => {"$gt" => 27.3, "$lt" => 1000.0}
+  #   "query" => {
+  #     "B" => {"$in" => [24.0, 25.0]},
+  #     "A" => {"$gt" => 27.3, "$lt" => 1000.0},
+  #   },
+  #   "orderby" => {
+  #     "A" : 1.0,
+  #   },
   # }
   def evaluate_query(query_hash, namespace)
     out = []
@@ -73,7 +78,20 @@ class Evaluator
   # operator_arg - the query arguments, specific to different operators
   #
 
-  MAX_IN_ARRAY = 3 #small for testing purposes
+  def handle_all (namespace, field, operator_arg)
+    return [
+      EvaluationResult.new(
+        %{\
+In the current release queries that use the $all operator must \
+scan all the documents that match the first element in the query \
+array. As a result, even with an index to support the query, the \
+operation may be long running, particularly when the first element \
+in the array is not very selective.},
+EvaluationResult::CRITICAL)
+    ]
+  end
+
+  MAX_IN_ARRAY = 2000
   def handle_in (namespace, field, operator_arg)
     result = []
     elems_no = operator_arg.count
@@ -88,16 +106,16 @@ class Evaluator
   def handle_negation (namespace, field, operator_arg)
     return [
       EvaluationResult.new(
-      'Negation operators ($ne, $nin) are inefficient.',
-      EvaluationResult::CRITICAL)
+        'Negation operators ($ne, $nin) are inefficient.',
+        EvaluationResult::CRITICAL)
     ]
   end
 
   def handle_where (namespace, field, operator_arg)
     return [
       EvaluationResult.new(
-      'javascript is slow, you should consider redesigning your queries.',
-      EvaluationResult::CRITICAL)
+        'javascript is slow, you should consider redesigning your queries.',
+        EvaluationResult::CRITICAL)
     ]
   end
 
@@ -112,8 +130,8 @@ class Evaluator
   def handle_not(namespace, field, operator_arg)
     res = [
       EvaluationResult.new(
-      'Negation operator ($not) is inefficient',
-      EvaluationResult::CRITICAL)
+        'Negation operator ($not) is inefficient',
+        EvaluationResult::CRITICAL)
     ]
     res += handle_single_field(namespace, field, operator_arg)
     return res
@@ -122,8 +140,8 @@ class Evaluator
   def handle_nor(namespace, field, operator_arg)
     res = [
       EvaluationResult.new(
-      'Negation operator ($nor) is inefficient',
-      EvaluationResult::CRITICAL)
+        'Negation operator ($nor) is inefficient',
+        EvaluationResult::CRITICAL)
     ]
     res += handle_multiple(namespace, field, operator_arg)
     return res
@@ -185,7 +203,7 @@ class Evaluator
     # http://docs.mongodb.org/manual/reference/operators/
 
     # comparison
-    "$all" => :empty_handle, #TODO
+    "$all" => :handle_all,
     "$in" => :handle_in,
     "$ne" => :handle_negation,
     "$nin" => :handle_negation,
@@ -220,6 +238,32 @@ class Evaluator
     "$size" => :handle_size,
   }
 
+  # This method prepares the hash argument, so that it can be
+  # handled by handle_regex method. Specifically, it changes
+  # { "$regex" => "^acme.*corp", "$options" => 'i'}
+  # to
+  # { "$regex" => "/^acme.*corp/i" }
+  #
+  # if hash argument contains neither '$regex' nor '$options' field,
+  # then hash remains unchanged
+  def normalize_regexes hash
+    options = nil
+    if hash.has_key? '$options' then
+      #assert that we have a 'regex' operator
+      if not hash.has_key? '$regex' then
+        raise '$options operator provided, but $regex not present.'
+      end
+
+      options = hash['$options']
+      hash.delete('$options')
+    end
+
+    if hash.has_key? '$regex' then
+      regex = "/#{hash['$regex']}/#{options}"
+      hash['$regex'] = regex
+    end
+  end
+
   # handles operators for a single field, eg
   # {"$in" => [1.0, 2.0, 3.0], "$lt" => 12}
   # @param namespace specifies the collection
@@ -227,17 +271,7 @@ class Evaluator
   def handle_single_field(namespace, field, operators_hash)
     res = []
 
-    # special case for regexes
-    if operators_hash.has_key? '$options' then
-      #assert that we have a 'regex' operator
-      if not operators_hash.has_key? '$regex' then
-        raise '$options operator provided, but $regex not present.'
-      end
-
-      regex = "/#{operators_hash['$regex']}/#{operators_hash['$options']}"
-      operators_hash.delete('$options')
-      operators_hash['$regex'] = regex
-    end
+    normalize_regexes operators_hash
 
     operators_hash.each do |operator_str, val|
       method_symbol = OPERATOR_HANDLERS_DISPATCH[operator_str]
@@ -249,6 +283,21 @@ class Evaluator
     return res
   end
 
+  # checks if a hash contains keys that start with a '$'
+  def has_operators hash
+    operators_count = 0
+
+    hash.each do |key, val|
+      if key.start_with? '$'
+        operators_count += 1
+      end
+    end
+
+    #XXX - what if operators_count is different than 0 and hash.size
+
+    return operators_count > 0
+  end
+
   def analyze_query(query_hash, namespace)
     out = []
     query_hash.each do |key, val|
@@ -257,17 +306,17 @@ class Evaluator
       if key.start_with? '$' then
         #e.g. $or => [query1, query2, ...]
         operator_hash = { key => val }
-      elsif val.is_a? Hash
+      elsif (val.is_a? Hash) and (has_operators val)
         #e.g. "A" => {"$gt" : 13, "$lt" : 27}
         field = key
         operator_hash = val
       else
-        #e.g. "A" => 27
+        #e.g. "A" => { "sub1" : 10, "sub2" : 30 }
         field = key
         operator_hash = { "_equality_check" => nil }
       end
 
-      out += handle_single_field 'namespace', field, operator_hash
+      out += handle_single_field namespace, field, operator_hash
     end
     return out
   end
