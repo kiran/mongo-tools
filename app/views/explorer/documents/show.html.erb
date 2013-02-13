@@ -2,16 +2,11 @@
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
 
-<% if current_document %>
+<% if @doc %>
 <div class="page-header">
   <h3 class="di"><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / <%= current_document_id %></h3>
   <small><%= link_to "Edit Document", edit_explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), class: "btn pull-right" if can_edit? %></small>
 </div>
 
-<pre><%= current_document.to_json %></pre>
-<% else %>
-<div class="alert alert-error">
-  <strong>Error!</strong>
-  That document doesn't exist
-</div>
+<pre><%= @doc.to_json %></pre>
 <% end %>

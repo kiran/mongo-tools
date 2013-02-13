@@ -6,6 +6,10 @@ class Explorer::DocumentsController < ExplorerController
   end
   
   def show
+    if not current_document
+      flash[:error] = "That document doesn't exist"
+    end
+    @doc = current_document
   end
   
   def create
@@ -19,16 +23,18 @@ class Explorer::DocumentsController < ExplorerController
       end
       coll.insert(json)
       redirect_to explorer_collection_path(current_database_name, current_collection_name)
-    rescue JSON::ParserError => exc
-      flash[:error] = "Error in parsing JSON"
+    rescue Exception => exc
+      flash[:error] = exc.message
       @query = params[:query]
       render :action => :new
     end
   end
   
   def destroy
-    coll = current_collection
-    coll.remove({'_id' => BSON::ObjectId(current_document_id)})
+    if current_document_id
+      coll = current_collection
+      coll.remove({'_id' => BSON::ObjectId(current_document_id)})
+    end
     redirect_to explorer_collection_path(current_database_name, current_collection_name)
   end
   
@@ -43,7 +49,6 @@ class Explorer::DocumentsController < ExplorerController
   
   def update
     coll = current_collection
-
     #If there's a JSON parsing problem, show the error to user
     #and allow them to try again.
     begin
@@ -58,8 +63,8 @@ class Explorer::DocumentsController < ExplorerController
     
       coll.update({'_id' => id}, json)
       redirect_to explorer_collection_document_path(current_database_name, current_collection_name)
-    rescue JSON::ParserError => exc
-      flash[:error] = "Error in parsing JSON"
+    rescue Exception => exc
+      flash[:error] = exc.message
       @query = params[:query]
       render :action => :edit
     end
