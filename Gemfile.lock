@@ -49,7 +49,6 @@ GEM
     formtastic-bootstrap (2.0.0)
       formtastic (~> 2.2)
       formtastic-bootstrap
-    growl (1.0.3)
     guard (1.6.1)
       listen (>= 0.6.0)
       lumberjack (>= 1.0.2)
@@ -180,7 +179,6 @@ DEPENDENCIES
   codemirror-rails
   formtastic
   formtastic-bootstrap
-  growl
   guard-rails
   guard-rspec
   jbuilder

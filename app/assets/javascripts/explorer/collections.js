@@ -9,6 +9,9 @@ $(function () {
     validateQuery(elem, t);
   };
 
+ 
+
+
   function validateQuery(elem, query) {
     try {
       eval('(' + query + ')');
@@ -29,6 +32,7 @@ $(function () {
   function sanitizedElementText(elem) {
     return $("<div></div>").html($(elem).html().replace(/[\u200B-\u200D\uFEFF]/g, '')).text();
   };
+
 
   // codemirror
   var $terminal = $("#collection-terminal");
