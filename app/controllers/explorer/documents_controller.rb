@@ -22,6 +22,7 @@ class Explorer::DocumentsController < ExplorerController
         json["_id"] = BSON::ObjectId(json["_id"])
       end
       coll.insert(json)
+      flash[:info] = "Your document was created successfully"
       redirect_to explorer_collection_path(current_database_name, current_collection_name)
     rescue Exception => exc
       flash[:error] = exc.message
@@ -31,11 +32,16 @@ class Explorer::DocumentsController < ExplorerController
   end
   
   def destroy
-    if current_document_id
-      coll = current_collection
-      coll.remove({'_id' => BSON::ObjectId(current_document_id)})
+    begin
+      if current_document_id
+        coll = current_collection
+        coll.remove({'_id' => BSON::ObjectId(current_document_id)})
+      end
+      flash[:info] = "Your document was deleted successfully"
+    rescue Exception => exc
+      flash[:error] = exc.message
     end
-    redirect_to explorer_collection_path(current_database_name, current_collection_name)
+    redirect_to explorer_collection_path(current_database_name, current_collection_name)  
   end
   
   def edit
@@ -62,6 +68,7 @@ class Explorer::DocumentsController < ExplorerController
       end
     
       coll.update({'_id' => id}, json)
+      flash[:info] = "Your document was updated successfully"
       redirect_to explorer_collection_document_path(current_database_name, current_collection_name)
     rescue Exception => exc
       flash[:error] = exc.message
