@@ -25,6 +25,8 @@ group :development, :test do
   gem 'guard-rails'
   gem 'guard-rspec'
   gem 'rspec-rails'
+  gem 'capybara'
+  gem 'poltergeist'
 
   gem 'growl' if RUBY_PLATFORM =~ /darwin/
   gem 'wdm', :platforms => [:mswin, :mingw], :require => false

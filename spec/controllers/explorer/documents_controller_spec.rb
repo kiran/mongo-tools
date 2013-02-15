@@ -1,4 +1,6 @@
 require 'spec_helper'
+require 'capybara/poltergeist'
+Capybara.javascript_driver = :poltergeist
 
 describe Explorer::DocumentsController do
   #Gets the DB name, so it's not hardcoded
@@ -68,6 +70,13 @@ describe Explorer::DocumentsController do
       coll = MongoMapper.database.collection(test_collection_name)
       doc = coll.find_one({"name"=> "Daddy"})
       doc.should_not be_nil
+    end
+    
+    it "typing invalid JSON should be considered an error", :js => true do
+      visit new_explorer_collection_document_path(:explorer_id => test_db_name, :collection_id => test_collection_name)
+      #"".should == new_explorer_collection_document_path(:explorer_id => test_db_name, :collection_id => test_collection_name)
+      fill_in "query", :with => "{ blah 1}"
+      page.should have_content('Document is Invalid.')
     end
   end
   
