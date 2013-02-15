@@ -73,10 +73,33 @@ $(function () {
     } else if (e.which == 8 || e.which == 46) {
       var parent = document.getSelection().anchorNode.parentNode;
       if ($(parent).is(filters) && ($(parent).text() == document.getSelection().toString() || $(parent).html() == "&#8203;")) {
-        $(parent).html("&#8203;")
+        $(parent).html("&#8203;");
         e.preventDefault();
       }
     }
+  });
+
+  $('#collection-form').submit(function() {
+    var params = {};
+    $(this).find("span[data-name]").each(function (index, elem) {
+      if ($(elem).is(":visible")) {
+        params[$(elem).data("name")] = sanitizedElementText(elem);
+      }
+    });
+    params["explain"] = $("#span-explain").is(":visible");
+
+    $.ajax({
+      type: "GET",
+      data: params,
+      success: function(data) {
+        $("#results").replaceWith(data);
+      },
+      error: function() {
+
+      }
+    });
+
+    return false;
   });
 
   // Hide the respective span elements on click
