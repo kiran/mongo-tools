@@ -4,15 +4,13 @@ describe Explorer::DocumentsController do
   
   before(:each) do
     #Insert some data for the test
-    db = MongoMapper.connection['mongotools_test']
-    coll = db.collection('foo')
+    coll = MongoMapper.database.collection('foo')
     coll.insert({'_id'=> BSON::ObjectId('510571677af4a25da80355c8'), 'name'=> 'Bob'})
   end
   
   after(:each) do
     #Remove some data that was used to test.
-    db = MongoMapper.connection['mongotools_test']
-    coll = db.collection('foo')
+    coll = MongoMapper.database.collection('foo')
     coll.remove
   end
 
@@ -55,8 +53,7 @@ describe Explorer::DocumentsController do
       post 'create', {:explorer_id => "mongotools_test", :collection_id => "foo", :query => "{\"name\": \"Daddy\"}"}
       response.should be_redirect
       flash[:error].should be_nil
-      db = MongoMapper.connection['mongotools_test']
-      coll = db.collection('foo')
+      coll = MongoMapper.database.collection('foo')
       doc = coll.find_one({"name"=> "Daddy"})
       doc.should_not be_nil
     end
@@ -79,8 +76,7 @@ describe Explorer::DocumentsController do
       post 'update', {:explorer_id => "mongotools_test", :collection_id => "foo", :id => '510571677af4a25da80355c8', :query => "{\"_id\": \"510571677af4a25da80355c8\", \"name\": \"Big Daddy\"}"}
       response.should be_redirect
       flash[:error].should be_nil
-      db = MongoMapper.connection['mongotools_test']
-      coll = db.collection('foo')
+      coll = MongoMapper.database.collection('foo')
       doc = coll.find_one({"name"=> "Big Daddy"})
       doc.should_not be_nil
     end
@@ -89,8 +85,7 @@ describe Explorer::DocumentsController do
       post 'update', {:explorer_id => "mongotools_test", :collection_id => "foo", :id => '510571677af4a25da80355c8', :query => "{\"name\": \"Bigger Daddy\"}"}
       response.should be_redirect
       flash[:error].should be_nil
-      db = MongoMapper.connection['mongotools_test']
-      coll = db.collection('foo')
+      coll = MongoMapper.database.collection('foo')
       doc = coll.find_one({"name"=> "Bigger Daddy"})
       doc.should_not be_nil
       doc['_id'].should == BSON::ObjectId('510571677af4a25da80355c8')
@@ -99,8 +94,7 @@ describe Explorer::DocumentsController do
   
   describe "Delete Documents" do
     it "Deleting a valid document should work" do
-      db = MongoMapper.connection['mongotools_test']
-      coll = db.collection('foo')
+      coll = MongoMapper.database.collection('foo')
       doc = coll.find_one({'_id' => BSON::ObjectId('510571677af4a25da80355c8')})
       doc.should_not be_nil
       delete 'destroy', {:explorer_id => "mongotools_test", :collection_id => "foo", :id => '510571677af4a25da80355c8'}
