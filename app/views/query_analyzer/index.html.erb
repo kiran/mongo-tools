@@ -1,11 +1,13 @@
 <%= form_tag "/query_analyzer", :method => 'get' do %>
-  <%= text_field_tag :query, nil, :class => 'input-medium search-query', :placeholder=>'Enter query' %>
+  <%= text_field_tag :collection_name, @collname, :class => "input-medium search-query", :placeholder => "Collection name" %>
+  <%= text_field_tag :query, @query, :class => 'input-medium search-query', :placeholder=>'Enter JSON' %>
   <button type="submit" value="upvote">
       <i class="icon-search"></i>
   </button>
 <% end %>
 
-<h2>Query: <%= @query %></h2>
+<h2>Collection: <%= @collname %></h2>
+<h2>JSON: <%= @query %></h2>
 
 <table class="table table-striped span8">
   <thead>
