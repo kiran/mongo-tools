@@ -1,0 +1,16 @@
+stats: &stats
+  stats_host: 127.0.0.1
+  stats_port: 27018
+  stats_server_db_name: stats
+  frequency: 20s
+
+development:
+  <<: *stats
+
+test:
+  <<: *stats
+
+production:
+  <<: *stats
+
+
