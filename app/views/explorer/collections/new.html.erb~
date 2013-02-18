@@ -1,0 +1,33 @@
+<% content_for :sidebar do %>
+<%= render :partial => "shared/collections_sidebar" %>
+<% end %>
+<script>
+ function validateCollName(){
+   
+   var colname =  document.frm.colname.value;
+   if(colname =="")//collection name must not be empty
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Please enter a collection name </h3> </div>"; 
+    document.getElementById("btndiv").innerHTML = ""; 
+}
+
+   else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>"; 
+   document.getElementById("btndiv").innerHTML = ""; }
+   else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>"; 
+document.getElementById("btndiv").innerHTML = ""; }
+   else 
+   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+
+    
+}
+</script>
+<!-- Collection new.html -->
+<form method="post" id="new-document-form" name ="frm" action="<%= explorer_collections_path(current_database_name, current_collection_name) %>">
+    <fieldset> 
+       <!--to display a message if the collection name entered is in an invalid format -->
+       <div id="colldiv"> </div>
+       Collection name: <input type ="text"onkeyup ="validateCollName()" id="new-collection-editor" name="colname"></textarea>
+     <br />  <div id="btndiv"> </div>
+    </fieldset>  
+</form>

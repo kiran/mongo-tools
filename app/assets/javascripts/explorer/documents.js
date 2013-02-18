@@ -58,19 +58,12 @@ var bsonEval = function (bson) {
 };
 
 $(function() {
-  $("#new-document-form").submit(function() {
-      var editorVal = newEditor.getValue();
-      var evaled = bsonEval(editorVal);
-      $("#new-document-editor").val(JSON.stringify(evaled, null, 2));
-      alert($("#new-document-editor").val());
-      return true;
-  });
   
   $('.formatted').each(function() {
       var $this = $(this);
 
       var field = CodeMirror.fromTextArea(this, {
-          readOnly: !$this.is('.readonly'),
+          readOnly: $this.is('.readonly'),
           path: "/assets/codemirror",
           mode: {
               name: "javascript",
@@ -84,6 +77,16 @@ $(function() {
       var totalChars = field.getTextArea().value.length;
       field.autoFormatRange({line:0, ch:0}, {line:totalLines, ch:totalChars});
       field.setCursor({line:0,chr:0});
+      
+
+      $this.closest('form').submit(function() {
+            field.save();
+            var editorVal = $this.val();
+            var evaled = bsonEval(editorVal);
+            var json = JSON.stringify(evaled, null, 2);
+            $this.val(json);
+            return true;
+      });
   });
   
 });

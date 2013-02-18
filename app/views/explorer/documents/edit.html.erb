@@ -3,10 +3,11 @@
 <% end %>
 
 
-<form method="post" id="edit-document-form" action="<%= explorer_collection_documents_path(current_database_name, current_collection_name) %>">
+<%= form_tag(explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :put) do %>
     <fieldset>
         <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / Edit Document</legend>
-        <textarea id="edit-document-editor" name="query" class="formatted"><%= current_document.to_json %></textarea>
-        <button type="submit" class="btn">Save Document</button>
+        <%= text_area_tag 'query', @query, :class => 'formatted' %>
+        <%= link_to 'Delete', explorer_collection_document_path(current_database_name, current_collection_name, current_document_id), :method => :delete,  :class=> 'btn', :confirm => 'Are you sure you want to delete the document?' %>
+        <%= submit_tag 'Save Document',:class => 'btn btn-primary' %>
     </fieldset>  
-</form>
+<% end %>

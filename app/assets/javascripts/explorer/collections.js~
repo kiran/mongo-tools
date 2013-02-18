@@ -9,7 +9,25 @@ $(function () {
     validateQuery(elem, t);
   };
 
- 
+ function validateCollName(){
+   
+   var colname =  document.frm.colname.value;
+   if(colname =="")//collection name must not be empty
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Please enter a collection name </h3> </div>"; 
+    document.getElementById("btndiv").innerHTML = ""; 
+}
+
+   else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>"; 
+   document.getElementById("btndiv").innerHTML = ""; }
+   else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>"; 
+document.getElementById("btndiv").innerHTML = ""; }
+   else 
+   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+
+    
+};
 
 
   function validateQuery(elem, query) {
@@ -77,33 +95,10 @@ $(function () {
     } else if (e.which == 8 || e.which == 46) {
       var parent = document.getSelection().anchorNode.parentNode;
       if ($(parent).is(filters) && ($(parent).text() == document.getSelection().toString() || $(parent).html() == "&#8203;")) {
-        $(parent).html("&#8203;");
+        $(parent).html("&#8203;")
         e.preventDefault();
       }
     }
-  });
-
-  $('#collection-form').submit(function() {
-    var params = {};
-    $(this).find("span[data-name]").each(function (index, elem) {
-      if ($(elem).is(":visible")) {
-        params[$(elem).data("name")] = sanitizedElementText(elem);
-      }
-    });
-    params["explain"] = $("#span-explain").is(":visible");
-
-    $.ajax({
-      type: "GET",
-      data: params,
-      success: function(data) {
-        $("#results").replaceWith(data);
-      },
-      error: function() {
-
-      }
-    });
-
-    return false;
   });
 
   // Hide the respective span elements on click
