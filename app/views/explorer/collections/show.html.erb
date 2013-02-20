@@ -24,34 +24,34 @@
                   <span>
                     db.<%= current_collection_name %>.find(<span id="span-query" style>
                       {
-                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
+                      <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
                       }
                       </span><span id="span-fields" style="display: none;">
                       , {
-                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
+                      <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
                       }
                     </span>)
                   </span><span id="span-sort" style="display: none;">
                     .sort({
-                    <span spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
+                    <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
                     })
                   </span><span id="span-skip" style="display: none;">
                     .skip(
-                    <span spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
+                    <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
                     )
                   </span><span id="span-limit">
                     .limit(
-                  <span spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
+                  <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
                     )
                   </span><span id="span-explain" style="display: none;">
                     .explain()
                   </span>
                 </div>
               <div class="buttons">
-                <button class="btn btn-inverse" data-field="fields">fields{}</button>
-                <button class="btn btn-inverse" data-field="sort">sort()</button>
-                <button class="btn btn-inverse" data-field="skip">skip()</button>
-                <button class="btn btn-inverse" data-field="explain">explain()</button>
+                <button id="fields" class="btn btn-inverse" data-field="fields">fields{}</button>
+                <button id="sort" class="btn btn-inverse" data-field="sort">sort()</button>
+                <button id="skip" class="btn btn-inverse" data-field="skip">skip()</button>
+                <button id="explain" class="btn btn-inverse" data-field="explain">explain()</button>
                 <button id="submit" class="btn pull-right" type="submit">Query</button>
               </div>
             </div>

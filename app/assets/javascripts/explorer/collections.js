@@ -9,9 +9,6 @@ $(function () {
     validateQuery(elem, t);
   };
 
- 
-
-
   function validateQuery(elem, query) {
     try {
       eval('(' + query + ')');
@@ -32,7 +29,23 @@ $(function () {
   function sanitizedElementText(elem) {
     return $("<div></div>").html($(elem).html().replace(/[\u200B-\u200D\uFEFF]/g, '')).text();
   };
+  
+  /*
+  var timer;                //timer identifier
+  var timerInterval = 5000;  //time in ms, 5 second for example
 
+  //on keyup, start the countdown
+  $('#span-').keyup(function(){
+      clearTimeout(timer);
+      if ($('#myInput').val) {
+          timer = setTimeout('validateQuery', timerInterval);
+      }
+  });
+
+  //user is "finished typing," do something
+  function doneTyping () {
+      //do something
+  } */
 
   // codemirror
   var $terminal = $("#collection-terminal");
