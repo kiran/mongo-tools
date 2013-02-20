@@ -6,12 +6,11 @@ require './evaluator'
 class EvaluatorTest < Test::Unit::TestCase
   def setup
     @ev = Evaluator.new 'localhost', 27017
-    @ns = 'dbname.collname'
   end
 
   def perform_query(query, expected_suggestions_no)
     begin
-      result = @ev.evaluate_query({"query" => query}, @ns)
+      result = @ev.evaluate_query(query,  :suggest_indexes => false)
       assert_equal( expected_suggestions_no, result.size,
                    'Wrong number of evaluation results')
       return result
@@ -171,7 +170,76 @@ class EvaluatorTest < Test::Unit::TestCase
       'A' => {'$brighter_than'=> '#AAFFCC'}
     }
     assert_raise RuntimeError do
-      @ev.evaluate_query({"query" => query}, @ns)
+      @ev.evaluate_query(query,  :suggest_indexes => false)
     end
+  end
+
+  def test_compositeIndex_1
+    query = {
+      "B" => { "$in" => [24.0, 25.0, 28.0, 29.0]},
+      "A" => { "$gt" => 27.3}
+    }
+    sort_hash = { "C" => 1.0 }
+    result =  @ev.evaluate_query(query, :sort_hash => sort_hash)
+    assert_equal("Index Recommendation: { 'C': 1, 'B': 1, 'A': 1 }",result[0].msg)
+    assert_equal("Recommendation",result[0].level_info)
+
+    # example given by http://java.dzone.com/articles/optimizing-mongodb-compound?mz=36885-nosql
+    query = { "timestamp" => { "$gte" => 2, "$lte" => 4 }, "anonymous" => false }
+    sort_hash = { "rating" => -1.0 }
+    result =  @ev.evaluate_query(query, :sort_hash => sort_hash)
+    assert_equal("Index Recommendation: { 'anonymous': 1, 'rating': 1, 'timestamp': 1 }",result[0].msg)
+    assert_equal("Recommendation",result[0].level_info)
+
+  end
+
+  #with unsupport operatorS
+  def test_compositeIndex_2
+    query = { "B" => { "$regex" => "^acme.*corp.*$" }, "A" => { "$gt" => 27.3}}
+    sort_hash = { "C" => 1.0 }
+    result =  @ev.evaluate_query(query, :sort_hash => sort_hash)
+    assert_equal("Index Recommendation: { 'C': 1, 'A': 1 }", result[0].msg)
+    assert_equal("Optional", result[0].level_info)
+
+    query = {
+      '$nor' => [
+        'field1' => 2.15,
+        'field2' => 'red',
+        'field3' => { '$ne' => 15 },
+        'field4' => { 'sub1' => 1, 'sub2' => 2 },
+      ]
+    }
+    result =  @ev.evaluate_query(query)
+    assert_equal("Index Recommendation: { 'field1': 1, 'field2': 1, 'field4': 1, 'field3': 1 }", result[0].msg)
+    assert_equal("Optional", result[0].level_info)
+  end
+
+  #with equal, range and sort operators
+  def test_compositeIndex_3
+    query = { "B" => 9,"A" => { "$gt" => 27.3, "$lt" => 97.3}}
+    sort_hash = { "C" => -1.0 }
+    result =  @ev.evaluate_query(query, :sort_hash => sort_hash)
+    assert_equal("Index Recommendation: { 'B': 1, 'C': 1, 'A': 1 }", result[0].msg)
+    assert_equal("Recommendation", result[0].level_info)
+  end
+
+  #sort only
+  def test_compositeIndex_4
+    query = {}
+    sort_hash = { "C" => 1.0 }
+    result =  @ev.evaluate_query(query, :sort_hash => sort_hash)
+    assert_equal("Index Recommendation: { 'C': 1 }", result[0].msg)
+    assert_equal("Recommendation", result[0].level_info)
+  end
+
+  #no Recommendation
+  def test_compositeIndex_5
+    query = {}
+    result =  @ev.evaluate_query(query)
+    assert_equal(0,result.size)
+
+    query = {"location" => { "$near" => [100,100] }}
+    result =  @ev.evaluate_query(query)
+    assert_equal(0,result.size)
   end
 end
