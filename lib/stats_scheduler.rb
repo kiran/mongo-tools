@@ -1,5 +1,4 @@
 require 'rubygems'
-require 'rufus/scheduler'  
 require 'mongo'
 
 include Mongo
@@ -33,8 +32,3 @@ class StatsScheduler
   end
 end
 
-scheduler = Rufus::Scheduler.start_new
-stats_scheduler = StatsScheduler.new("localhost", 27017, "db_stats")
-scheduler.every("2s") do
-  stats_scheduler.collect_statistics
-end
