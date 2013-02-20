@@ -27,6 +27,7 @@ group :development, :test do
   gem 'guard-rspec'
   gem 'rspec-rails'
   gem 'capybara'
+  gem 'capybara-webkit'
   gem 'selenium-webdriver'
 
   gem 'growl' if RUBY_PLATFORM =~ /darwin/

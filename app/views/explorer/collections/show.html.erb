@@ -21,30 +21,28 @@
           <form id="collection-form" name="query">
               <div class="interface">
                 <div class="params">
-                  <span>
-                    db.<%= current_collection_name %>.find(<span id="span-query" style>
-                      {
-                      <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
-                      }
-                      </span><span id="span-fields" style="display: none;">
-                      , {
-                      <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
-                      }
-                    </span>)
-                  </span><span id="span-sort" style="display: none;">
-                    .sort({
-                    <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
-                    })
+                  db.<%= current_collection_name %>.find(<span id="span-query" style>
+                  {
+                  <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
+                  }
+                  </span><span id="span-fields" style="display: none;">
+                  , {
+                  <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
+                  }
+                  </span>)<span id="span-sort" style="display: none;">
+                  .sort({
+                  <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
+                  })
                   </span><span id="span-skip" style="display: none;">
-                    .skip(
-                    <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
-                    )
+                  .skip(
+                  <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
+                  )
                   </span><span id="span-limit">
-                    .limit(
-                  <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
-                    )
+                  .limit(
+                  <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">25&#8203;</span>
+                  )
                   </span><span id="span-explain" style="display: none;">
-                    .explain()
+                  .explain()
                   </span>
                 </div>
               <div class="buttons">

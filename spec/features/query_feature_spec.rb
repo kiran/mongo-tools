@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-feature "query", :js => true do
+feature "query", :focus => true, :js => true, :driver => :webkit do
   
   #Sets the collection name, so it's not hardcoded
   $test_collection_name = ""
@@ -14,9 +14,10 @@ feature "query", :js => true do
     MongoMapper.database = MONGO_TEST_DB
     coll = MongoMapper.database.collection(test_collection_name)
     coll.insert({'_id'=> BSON::ObjectId('510571677af4a25da80355c8'), 'name'=> 'Bob', 'sex' => 'Male', 'age' => 22})
-    coll.insert({'_id'=> BSON::ObjectId('51243e3ca588a7ea2216d63a'), 'name'=> 'Sue', 'sex' => 'Feale', 'age' => 27})
+    coll.insert({'_id'=> BSON::ObjectId('51243e3ca588a7ea2216d63a'), 'name'=> 'Sue', 'sex' => 'Female', 'age' => 27})
     coll.insert({'_id'=> BSON::ObjectId('51243e3ea588a7ea2216d63c'), 'name'=> 'Zane', 'sex' => 'Male', 'age' => 1})
-    coll.insert({'_id'=> BSON::ObjectId('51243e3fa588a7ea2216d63d'), 'name'=> 'Anne', 'sex' => 'Feale', 'age' => 99})
+    coll.insert({'_id'=> BSON::ObjectId('51243e3fa588a7ea2216d63d'), 'name'=> 'Anne', 'sex' => 'Female', 'age' => 99})
+    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
   end
   
   #clean up database
@@ -41,18 +42,15 @@ feature "query", :js => true do
   end
 
    scenario "simple query" do
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
     input = '"name": "Bob"'
     opts = {'limit' => 10}
     query(input, opts)
     page.should have_table('results')
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "sex": "Male", "age": 22}')
+    page.all('table#results tr').count.should == 1
   end
 
   scenario "simple query with fields blacklist" do
-    #navigate to collections / query page
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
-    #fill in query
     click_button 'fields'
     input = '"name": "Bob"'
     opts = {
@@ -62,12 +60,10 @@ feature "query", :js => true do
     query(input, opts)
     page.should have_table 'results'
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "age": 22}')
+    page.all('table#results tr').count.should == 1
   end
 
   scenario "simple query with fields whitelist" do
-    #navigate to collections / query page
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
-    #fill in query
     click_button 'fields'
     input = '"name": "Bob"'
     opts = {
@@ -77,12 +73,10 @@ feature "query", :js => true do
     query(input, opts)
     page.should have_table 'results'
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
+    page.all('table#results tr').count.should == 1
   end
   
   scenario "simple query with explain" do
-    #navigate to collections / query page
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
-    #fill in query
     click_button 'explain'
     input = '"name": "Bob"'
     opts = {'limit' => 10}
@@ -92,23 +86,37 @@ feature "query", :js => true do
   end
 
   scenario "simple query with sort" do
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
-    #fill in query
     click_button 'sort'
-    input = '"name": "Bob"'
-    opts = {'limit' => 10, 'sort' => '"age": 1'}
+    input = '"sex": "Female"'
+    opts = { 
+      'sort' => '"age": 0',
+      'limit' => 10
+    }
     query(input, opts)
     page.should have_table 'results'
+    page.all('table#results tr').count.should == 2
+    results = [
+      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}', 
+      '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
+    ]
+    count = 0
+    page.all('table#results tr') do |row|
+      row.should have_css('a', :text => results[count])
+      count += 1
+    end
   end
 
   scenario "simple query with skip" do
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
-    #fill in query
     click_button 'skip'
-    input = '"sex": "Male"'
-    opts = {'limit' => 10, 'skip' => 1}
+    input = '"sex": "Female"'
+    opts = {
+      'skip' => '1',
+      'limit' => 10
+    }
     query(input, opts)
     page.should have_table 'results'
+    page.all('table#results tr').count.should == 1
+    page.first('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
   end
 
 end
