@@ -85,7 +85,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
     page.should have_css '.debug_dump'
   end
 
-  scenario "simple query with sort" do
+  scenario "simple query with sort ascending" do
     click_button 'sort'
     input = '"sex": "Female"'
     opts = { 
@@ -98,6 +98,27 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
     results = [
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}', 
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
+    ]
+    count = 0
+    page.all('table#results tr') do |row|
+      row.should have_css('a', :text => results[count])
+      count += 1
+    end
+  end
+
+  scenario "simple query with sort descending" do
+    click_button 'sort'
+    input = '"sex": "Female"'
+    opts = { 
+      'sort' => '"age": 1',
+      'limit' => 10
+    }
+    query(input, opts)
+    page.should have_table 'results'
+    page.all('table#results tr').count.should == 2
+    results = [
+      '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}',
+      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'
     ]
     count = 0
     page.all('table#results tr') do |row|
