@@ -219,7 +219,6 @@ DEPENDENCIES
   rb-inotify
   rspec-rails
   rufus-scheduler
-  selenium-webdriver
   therubyracer
   thin
   twitter-bootstrap-rails

@@ -28,7 +28,6 @@ group :development, :test do
   gem 'rspec-rails'
   gem 'capybara'
   gem 'capybara-webkit'
-  gem 'selenium-webdriver'
 
   gem 'growl' if RUBY_PLATFORM =~ /darwin/
   gem 'wdm', :platforms => [:mswin, :mingw], :require => false

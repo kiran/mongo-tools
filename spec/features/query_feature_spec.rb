@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-feature "query", :focus => true, :js => true, :driver => :webkit do
+feature "query", :focus => true, :js => true do
   
   #Sets the collection name, so it's not hardcoded
   $test_collection_name = ""
