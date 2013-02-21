@@ -89,7 +89,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
     click_button 'sort'
     input = '"sex": "Female"'
     opts = { 
-      'sort' => '"age": 0',
+      'sort' => '"age": 1',
       'limit' => 10
     }
     query(input, opts)
@@ -100,7 +100,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
     ]
     count = 0
-    page.all('table#results tr') do |row|
+    page.all('table#results tr').each do |row|
       row.should have_css('a', :text => results[count])
       count += 1
     end
@@ -110,7 +110,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
     click_button 'sort'
     input = '"sex": "Female"'
     opts = { 
-      'sort' => '"age": 1',
+      'sort' => '"age": -1',
       'limit' => 10
     }
     query(input, opts)
@@ -121,7 +121,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'
     ]
     count = 0
-    page.all('table#results tr') do |row|
+    page.all('table#results tr').each do |row|
       row.should have_css('a', :text => results[count])
       count += 1
     end
@@ -137,7 +137,7 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
     query(input, opts)
     page.should have_table 'results'
     page.all('table#results tr').count.should == 1
-    page.first('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
+    page.find('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
   end
 
 end
