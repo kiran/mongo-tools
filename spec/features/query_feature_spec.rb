@@ -10,14 +10,13 @@ feature "query", :focus => true, :js => true, :driver => :webkit do
 
   #populate database
   before :each do
-    #Insert some data for the test
-    MongoMapper.database = MONGO_TEST_DB
+    #Insert some data for the testMongoMapper.database.name
     coll = MongoMapper.database.collection(test_collection_name)
     coll.insert({'_id'=> BSON::ObjectId('510571677af4a25da80355c8'), 'name'=> 'Bob', 'sex' => 'Male', 'age' => 22})
     coll.insert({'_id'=> BSON::ObjectId('51243e3ca588a7ea2216d63a'), 'name'=> 'Sue', 'sex' => 'Female', 'age' => 27})
     coll.insert({'_id'=> BSON::ObjectId('51243e3ea588a7ea2216d63c'), 'name'=> 'Zane', 'sex' => 'Male', 'age' => 1})
     coll.insert({'_id'=> BSON::ObjectId('51243e3fa588a7ea2216d63d'), 'name'=> 'Anne', 'sex' => 'Female', 'age' => 99})
-    visit "/explorer/#{MONGO_TEST_DB}/collections/#{$test_collection_name}"
+    visit "/explorer/#{MongoMapper.database.name}/collections/#{$test_collection_name}"
   end
   
   #clean up database
