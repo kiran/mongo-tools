@@ -15,6 +15,7 @@ gem 'codemirror-rails'
 
 gem 'formtastic'
 gem 'formtastic-bootstrap'
+gem 'crack'
 
 group :assets do
   gem 'uglifier', '>= 1.0.3'
@@ -25,6 +26,8 @@ group :development, :test do
   gem 'guard-rails'
   gem 'guard-rspec'
   gem 'rspec-rails'
+  gem 'capybara'
+  gem 'capybara-webkit'
 
   gem 'growl' if RUBY_PLATFORM =~ /darwin/
   gem 'wdm', :platforms => [:mswin, :mingw], :require => false

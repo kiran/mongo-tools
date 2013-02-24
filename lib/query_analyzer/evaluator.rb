@@ -1,80 +1,56 @@
 require 'rubygems'
 require 'mongo'
 
-require 'pp' #debug purposes
-def debug (*xs)
-  xs.each do |x|
-    PP::pp(x, $>, 65)
-  end
-end
-
-
 class EvaluationResult
-  LV1 = 1
-  LV2 = 2
   def initialize(msg, level)
     @msg = msg
     @level = level
   end
   attr_accessor :msg, :level
-  def level_info
-    case level
-    when LV1
-      "Level 1"
-    when LV2
-      "Level 2"
-    else raise "Unknown level: #{level}. "
-    end
-  end
 end
 
 
-class EfficencyResult < EvaluationResult
-  #severity levels:
-  WARNING = 1
-  BAD = 2
-  CRITICAL = 3
-  def initialize(msg, severity)
-    super(msg,severity)
+class EfficiencyResult < EvaluationResult
+  # Severity levels:
+  WARNING = :warning
+  BAD = :bad
+  CRITICAL = :critical
+
+  # Inefficiency codes (chiefly for testing purposes):
+  ALL = :all
+  IN = :in
+  NEGATION = :negation
+  WHERE = :where
+  NOT = :not
+  NOR = :nor
+  REGEX_ANCHOR = :regex_anchor
+  REGEX_CASE = :regex_case
+  REGEX_BAD_END = :regex_bad_end
+  SIZE = :size
+
+  def initialize(msg, level, code)
+    super(msg, level)
+    @code = code
   end
 
-  def level_info
-    case level
-    when WARNING
-      "Waring"
-    when BAD
-      "Bad"
-    when CRITICAL
-      "Critial"
-    else raise "Unknown severity: #{level}. "
-    end
-  end
+  attr_accessor :code
 end
 
 
 class IndexResult < EvaluationResult
-
-  #recommendation level
   # May ignore some fields or contain too many fields
   # User should consider whether create this index is worth it.
-  OPTIONAL = 1
+  OPTIONAL = :optional
 
   # Most of time it improves performance
-  GOOD = 2
+  GOOD = :good
 
-  def initialize(msg, level)
-    super(msg,level)
+  def initialize(raw_index, level)
+    super("Index recommendation: #{raw_index}", level)
+    @raw_index = raw_index
   end
 
-  def level_info
-    case level
-    when OPTIONAL
-      "Optional"
-    when GOOD
-      "Recommendation"
-    else raise "Unknown Recommendation level: #{level}. "
-    end
-  end
+  attr_accessor :raw_index
 end
 
 
@@ -98,7 +74,6 @@ class Evaluator
   # TODO
   def getIndexInformation(namespace)
     coll = getColl(namespace)
-    debug coll.index_information
   end
 
   # Evaluates the whole query.
@@ -130,7 +105,7 @@ class Evaluator
 
   #
   # the operator handlers follow
-  # every handler returns an array of EfficencyResult objects
+  # every handler returns an array of EfficiencyResult objects
   # depending on the following arguments
   # field (self explanatory)
   # operator_arg - the query arguments, specific to different operators
@@ -138,14 +113,15 @@ class Evaluator
 
   def handle_all (field, operator_arg)
     return [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         %{\
 In the current release queries that use the $all operator must \
 scan all the documents that match the first element in the query \
 array. As a result, even with an index to support the query, the \
 operation may be long running, particularly when the first element \
 in the array is not very selective.},
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::ALL)
     ]
   end
 
@@ -154,26 +130,29 @@ in the array is not very selective.},
     result = []
     elems_no = operator_arg.count
     if elems_no > MAX_IN_ARRAY then
-      result << EfficencyResult.new(
+      result << EfficiencyResult.new(
         "$in operator with a large array (#{elems_no}) is inefficient",
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::IN)
     end
     return result
   end
 
   def handle_negation (field, operator_arg)
     return [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         'Negation operators ($ne, $nin) are inefficient.',
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::NEGATION)
     ]
   end
 
   def handle_where (field, operator_arg)
     return [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         'javascript is slow, you should consider redesigning your queries.',
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::WHERE)
     ]
   end
 
@@ -187,9 +166,10 @@ in the array is not very selective.},
 
   def handle_not(field, operator_arg)
     res = [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         'Negation operator ($not) is inefficient',
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::NOT)
     ]
     res += handle_single_field(field, operator_arg)
     return res
@@ -197,9 +177,10 @@ in the array is not very selective.},
 
   def handle_nor(field, operator_arg)
     res = [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         'Negation operator ($nor) is inefficient',
-        EfficencyResult::CRITICAL)
+        EfficiencyResult::CRITICAL,
+        EfficiencyResult::NOR)
     ]
     res += handle_multiple(field, operator_arg)
     return res
@@ -210,26 +191,29 @@ in the array is not very selective.},
     regex = eval operator_arg
 
     if not regex.source.start_with? '^' then
-      res << EfficencyResult.new(
+      res << EfficiencyResult.new(
         'Try to change the regex so that it has an anchor for the ' +
         'beginning (i.e. ^). Otherwise the engine cannot make use of ' +
         'indexes (if there are any).',
-        EfficencyResult::BAD)
+        EfficiencyResult::BAD,
+        EfficiencyResult::REGEX_ANCHOR)
     end
 
     if regex.casefold? then
-      res << EfficencyResult.new(
+      res << EfficiencyResult.new(
         'Case insensitive queries are inefficient. Consider keeping ' +
         "a lowercase copy of field '#{field}' in your documents.",
-        EfficencyResult::BAD)
+        EfficiencyResult::BAD,
+        EfficiencyResult::REGEX_CASE)
     end
 
     ['.*', '.*$'].each do |bad_end|
       if regex.source.end_with? bad_end then
-        res << EfficencyResult.new(
+        res << EfficiencyResult.new(
           "Do you really need #{bad_end} at the end of your regex? "+
           'It slows down the queries.',
-          EfficencyResult::BAD)
+          EfficiencyResult::BAD,
+          EfficiencyResult::REGEX_BAD_END)
       end
     end
 
@@ -238,11 +222,12 @@ in the array is not very selective.},
 
   def handle_size(field, operator_arg)
     [
-      EfficencyResult.new(
+      EfficiencyResult.new(
         'Queries cannot use indexes for $size portion of a query. ' +
         'Consider keeping a separate field holding the array size ' +
         'and creating an index on it.',
-        EfficencyResult::WARNING)
+        EfficiencyResult::WARNING,
+        EfficiencyResult::SIZE)
     ]
   end
 
@@ -290,7 +275,7 @@ in the array is not very selective.},
   end
 
   def generate_index_suggestion recommendation
-    str = "Index Recommendation: {"
+    str = "{"
     recommendation.each do |field|
       str += " '" + field + "': 1,"
     end
@@ -355,9 +340,18 @@ in the array is not very selective.},
     "$where" => :handle_where,
 
     # geospatial
-    "$box" => :empty_handle, #TODO
-    "$near" => :empty_handle, #TODO
-    "$within" => :empty_handle, #TODO
+    #
+    # All the geospatial queries operate on a geospatial index, so they
+    # should be efficient.
+    "$box" => :empty_handle,
+    "$near" => :empty_handle,
+    "$within" => :empty_handle,
+    "$nearSphere" => :empty_handle,
+    "$centerSphere" => :empty_handle,
+    "$center" => :empty_handle,
+    "$maxDistance" => :empty_handle,
+    "$polygon" => :empty_handle,
+    "$uniqueDocs" => :empty_handle,
 
     # array
     "$elemMatch" => :empty_handle, #TODO
