@@ -1,4 +1,6 @@
 
 function flash(loc, level, msg) {
-  loc.prepend('<div class="alert alert-'+level+'"><button type="button" class="close" data-dismiss="alert">&times;</button>'+msg+'</div>');
+  button = $("<button />", { class: "close" }).attr("data-dismiss", "alert").append("&times;");
+  div = $("<div />", { class: "alert alert-" + level }).append(button).append(msg);
+  loc.prepend(div);
 };
