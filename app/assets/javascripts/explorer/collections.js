@@ -3,13 +3,6 @@
 
 $(function () {
 
-  if (FlashDetect.installed) {
-    $('#copy').removeClass("hide");
-  }
-  else {
-    $('#copy').addClass("hide");
-  }
-
   var typingTimer;
   var doneTypingInterval = 650;  //time in ms
 
@@ -37,7 +30,7 @@ $(function () {
     if (e.which == 13) {
       // Make enter submit the form
       e.preventDefault();
-      
+
       $(this).parents("form").submit();
     } else if (e.which == 8 || e.which == 46) {
       var parent = document.getSelection().anchorNode.parentNode;
