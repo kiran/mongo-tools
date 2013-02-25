@@ -1,8 +1,10 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
-  helper_method :can_read?, :can_edit?, :can_edit_collection?, :can_edit_database?, :can_read_collection?,
-                :can_read_database?, :current_collection_name, :current_database_name, :current_document_id,
-                :current_database, :current_collection, :current_document
+
+  helper_method :all_databases, :can_read?, :can_edit?, :can_edit_collection?,
+                :can_edit_database?, :can_read_collection?, :can_read_database?,
+                :current_collection, :current_collection_name, :current_database,
+                :current_database_name, :current_document, :current_document_id
   
   protected
     def current_database_name
@@ -27,6 +29,22 @@ class ApplicationController < ActionController::Base
   
     def current_document
       @current_document ||= current_document_id ? current_collection.find_one(BSON::ObjectId(current_document_id)) : nil
+    end
+
+    def all_databases
+      @all_databases ||= MongoMapper.connection.database_names.sort.select { |d| can_read?(d) }
+    end
+    
+    def current_database
+      @current_database ||= current_database_name ? MongoMapper.connection[current_database_name] : nil
+    end
+    
+    def current_collection
+      @current_collection ||= current_collection_name ? current_database.collection(current_collection_name) : nil
+    end
+    
+    def current_document
+      @current_document ||= current_document_id ? current_collection.find_one(BSON::ObjectId.from_string(current_document_id)) : nil
     end
 
     def can_read?(db = nil, coll = nil)
