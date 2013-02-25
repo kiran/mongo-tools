@@ -2,7 +2,25 @@ class Explorer::CollectionsController < ExplorerController
   def index
     redirect_to explorer_path(current_database_name)
   end
-  
+
+ #POST
+  def create
+    begin
+     conn = MongoMapper.connection
+     db = conn.db(current_database_name)
+     db.create_collection(params[:coll])
+    rescue Exception => ex
+     flash[:error] = exc.message
+     render :action => :new
+    end
+    redirect_to explorer_collection_path(current_database_name, current_collection_name)
+    
+  end
+
+#GET
+  def new
+    
+  end
   def show
     @opts = {}
     #convert string to bool

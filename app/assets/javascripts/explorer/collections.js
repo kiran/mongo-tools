@@ -3,6 +3,26 @@
 
 $(function () {
 
+ function validateCollName(){
+   
+   var colname = document.frm.colname.value;
+   if(colname =="")//collection name must not be empty
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Please enter a collection name </h3> </div>";
+    document.getElementById("btndiv").innerHTML = "";
+}
+
+   else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>";
+   document.getElementById("btndiv").innerHTML = ""; }
+   else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>";
+document.getElementById("btndiv").innerHTML = ""; }
+   else
+   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+
+    
+};
+
   // query functions
   function validateHash(elem) {
     t = '{' + sanitizedElementText(elem) + '}';
