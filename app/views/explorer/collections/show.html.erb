@@ -3,12 +3,11 @@
 <% end %>
 
 <% if current_database.collection_names.include? current_collection_name %>
+<% unless request.xhr? %>
 <div class="page-header">
   <h3 class="di"><%= current_collection_name %></h3>
   <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>
 </div>
-
-
 
 <div class="tabbable"> <!-- Only required for left/right tabs -->
   <ul class="nav nav-tabs">
@@ -22,38 +21,36 @@
           <form id="collection-form" name="query">
               <div class="interface">
                 <div class="params">
-                  <span>
-                    find(<span id="span-query" style>
-                      {
-                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
-                      }
-                      </span><span id="span-fields" style>
-                      , {
-                      <span spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
-                      }
-                    </span>)
-                  </span><span id="span-sort" style>
-                    .sort({
-                    <span spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
-                    })
-                  </span><span id="span-skip" style>
-                    .skip(
-                    <span spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
-                    )
-                  </span><span id="span-limit" style>
-                    .limit(
-                  <span spellcheck="false" contenteditable="true" data-type="number" data-name="limit">&#8203;</span>
-                    )
-                  </span><span id="span-explain" style>
-                    .explain()
+                  db.<%= current_collection_name %>.find(<span id="span-query" style>
+                  {
+                  <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
+                  }
+                  </span><span id="span-fields" style="display: none;">
+                  , {
+                  <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
+                  }
+                  </span>)<span id="span-sort" style="display: none;">
+                  .sort({
+                  <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
+                  })
+                  </span><span id="span-skip" style="display: none;">
+                  .skip(
+                  <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
+                  )
+                  </span><span id="span-limit">
+                  .limit(
+                  <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">25&#8203;</span>
+                  )
+                  </span><span id="span-explain" style="display: none;">
+                  .explain()
                   </span>
                 </div>
               <div class="buttons">
-                <button class="btn btn-inverse active" data-field="fields">fields{}</button>
-                <button class="btn btn-inverse active" data-field="sort">sort()</button>
-                <button class="btn btn-inverse active" data-field="skip">skip()</button>
-                <button class="btn btn-inverse active" data-field="explain">explain()</button>
-                <button class="btn pull-right" type="submit">Query</button>
+                <button id="fields" class="btn btn-inverse" data-field="fields">fields{}</button>
+                <button id="sort" class="btn btn-inverse" data-field="sort">sort()</button>
+                <button id="skip" class="btn btn-inverse" data-field="skip">skip()</button>
+                <button id="explain" class="btn btn-inverse" data-field="explain">explain()</button>
+                <button id="submit" class="btn pull-right" type="submit">Query</button>
               </div>
             </div>
           </form>
@@ -67,12 +64,15 @@
     </div>
   </div>
 </div>
+<% end %>
 
-
-        
-
-<table class="table table-bordered">
-  <% current_collection.find.each do |document| %>
+<% if @explain %>
+<div id="results">
+  <%= debug @results.explain %>
+</div>
+<% else %>
+<table id="results" class="table table-bordered">
+  <% @results.each do |document| %>
   <tr>
     <td>
       <% if document.has_key?("_id") %>
@@ -84,6 +84,8 @@
   </tr>
   <% end %>
 </table>
+<% end %>
+
 <% else %>
 <div class="alert alert-error">
   <strong>Error!</strong>

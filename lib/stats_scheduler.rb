@@ -4,7 +4,7 @@ require 'mongo'
 include Mongo
 
 class StatsScheduler
-  def initialize (server, host, db_name)
+  def initialize(server, host, db_name)
     @client = MongoClient.new(server, host)
     @tools_db = @client[db_name]
 
@@ -14,7 +14,7 @@ class StatsScheduler
 
   def collect_statistics
     dbs = @client.database_names
-    stats = @client[dbs[0]].command({serverStatus: 1})
+    stats = @client[dbs[0]].command( { serverStatus: 1 } )
     stats.delete("locks")
     time = stats["localTime"]
 
@@ -24,9 +24,9 @@ class StatsScheduler
 
     dbs.each do |db_name|
       db = @client[db_name]
-      info = db.command({dbStats: 1, scale: 1024})
+      info = db.command( { dbStats: 1, scale: 1024 } )
 
-      doc = {"time" => time, "name"=> db_name, "stats" => info}
+      doc = { "time" => time, "name"=> db_name, "stats" => info }
       @dbs_coll.insert(doc)
     end
   end
