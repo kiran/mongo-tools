@@ -1,6 +1,4 @@
 require 'spec_helper'
-require 'capybara/poltergeist'
-Capybara.javascript_driver = :poltergeist
 
 describe Explorer::DocumentsController do
   #Gets the DB name, so it's not hardcoded
