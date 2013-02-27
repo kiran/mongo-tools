@@ -5,6 +5,32 @@ describe Evaluator do
     Evaluator.new 'localhost', 27017
   }
 
+  let(:test_collection_name) {
+    $test_collection_name = "indexTest"
+  }
+
+# populate database
+  before :each do
+    coll = MongoMapper.database.collection(test_collection_name)
+    # insert some random data
+    10.times do |i|
+      rname = (0...8).map{65.+(rand(26)).chr}.join
+      rartist = (0...8).map{65.+(rand(26)).chr}.join
+      coll.insert({'name'=> rname, 'artist'=> rartist, 'duration'=> Random.rand(100), 'price'=> Random.rand(100), 'rating'=> Random.rand(10)})
+    end
+    coll.insert({ "location" => { "x" => -10, "y" => 10 } })
+
+    # create indexes
+    coll.ensure_index([['duration', Mongo::ASCENDING], ['name', Mongo::ASCENDING]])
+    coll.ensure_index([['duration', Mongo::ASCENDING], ['rating', Mongo::ASCENDING], ['price', Mongo::ASCENDING]])
+    coll.create_index([['location', Mongo::GEO2D]])
+  end
+
+  # clean up collection and indexes
+  after :each do
+    MongoMapper.database.drop_collection(test_collection_name)
+  end
+
   def perform_query(query, expected_outcome)
     result = evaluator.evaluate_query(query, :suggest_indexes => false)
     result.map! {|er| [er.code, er.level]}
@@ -270,6 +296,95 @@ describe Evaluator do
 
       query = {"location" => { "$near" => [100,100] }}
       result =  evaluator.evaluate_query(query)
+      expect(result).to eq([])
+    end
+
+    it "Recommends index which is better than existing one(coverage == none)." do
+      query = { "artist" => "bar" }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+
+      expect(result[0].raw_index).to eq("{ 'artist': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+    end
+
+    it "Recommends index which is better than existing one(coverage == partial)." do
+      query = { "artist" => "bar", "name" => "foo" }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+
+      expect(result[0].raw_index).to eq("{ 'artist': 1, 'name': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+
+      query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "name" => "foo" }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+    end
+
+    it "Recommends index which is better than existing one(coverage == full, idealorder == false)." do
+      query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "name" => "foo" }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+
+      query = { "duration" => 50, "price" => 20 }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result[0].raw_index).to eq("{ 'duration': 1, 'price': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+
+      query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "price" => 50 }
+      sort_hash = { "rating" => 1.0 }
+      result =  evaluator.evaluate_query(query,
+        :sort_hash => sort_hash,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result[0].raw_index).to eq("{ 'price': 1, 'rating': 1, 'duration': 1 }")
+      expect(result[0].level).to eq(IndexResult::GOOD)
+    end
+
+    # Recommended index == existing index
+    it "Recommends no index which is equal to existing one." do
+      query = { "duration" => 50, "name" => "foo" }
+      result =  evaluator.evaluate_query(query, :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result).to eq([])
+
+      query = { "price" => { "$gte" => 50, "$lte" => 60 }, "duration" => 50 }
+      sort_hash = { "rating" => 1.0 }
+      result =  evaluator.evaluate_query(query,
+        :sort_hash => sort_hash,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result).to eq([])
+    end
+
+    # Recommended index is the prefix of existing index
+    it "Recommends no index which is the prefix of existing one" do
+      query = { "duration" => 50}
+      sort_hash = { "rating" => 1.0 }
+
+      result =  evaluator.evaluate_query(query, :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result).to eq([])
+
+      result =  evaluator.evaluate_query(query, :sort_hash => sort_hash, :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+      expect(result).to eq([])
+    end
+
+    # Recommended index and existing index are logically equivalent
+    it "Recommends no index which is logically equal to existing one." do
+      query = { "name" => "foo", "duration" => 50}
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+
+      expect(result).to eq([])
+    end
+
+    it "Recommends no index when unsupported indexes encountered" do
+      query = { "location" => [-100, 100] }
+      result =  evaluator.evaluate_query(query,
+        :namespace => MongoMapper.database.full_collection_name(test_collection_name))
+
       expect(result).to eq([])
     end
 
