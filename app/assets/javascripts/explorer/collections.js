@@ -2,26 +2,43 @@
 // All this logic will automatically be available in application.js.
 
 $(function () {
+ 
+ /*$('.formatted').each(function() {
+  var $this = $(this);
+} */
 
- function validateCollName(){
-   
-   var colname = document.frm.colname.value;
-   if(colname =="")//collection name must not be empty
-   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Please enter a collection name </h3> </div>";
-    document.getElementById("btndiv").innerHTML = "";
-}
-
+ $('.colltxt').keyup( function(){
+  $('.message').empty(); //empties the div
+  $('input[type=submit]').removeAttr('disabled');
+  var colname = $('.colltxt').val();
+ 
+  if(colname ==" ")//collection name must not be empty
+   {
+       $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t be empty.</div>'); 
+	if($('div.alert').length == 0) {
+          flash($this.closest('div'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        }
+	$('input[type=submit]').attr('disabled', 'disabled'); 
+   }
    else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
-   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>";
-   document.getElementById("btndiv").innerHTML = ""; }
-   else if(colname.search("system.") == 0)//must not begin with 'system.'
-   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>";
-document.getElementById("btndiv").innerHTML = ""; }
-   else
-   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+   {
+       $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t contain \'$\'</div>'); 
+	if($('div.alert').length == 0) {
+          flash($this.closest('form'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        }
+      $('input[type=submit]').attr('disabled', 'disabled'); 
 
+   }else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {
     
-};
+    $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t begin with \'system\'</div>'); 
+    $('input[type=submit]').attr('disabled', 'disabled'); 
+
+   }
+   
+
+ })//end 'colltxt'onkeyup()
+
 
   // query functions
   function validateHash(elem) {

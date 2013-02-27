@@ -2,6 +2,40 @@
 // All this logic will automatically be available in application.js.
 
 $(function () {
+ 
+ /*$('.formatted').each(function() {
+  var $this = $(this);
+} */
+
+ $('.colltxt').onkeyup( function(){
+  var colname = $('.colltxt').val();
+  colname = trim(colname) 
+ }//end 'colltxt'onkeyup()
+
+ $('#addcollfrm').submit(function() {
+   
+   var colname = $('.colltxt').val();
+
+   if(colname =="")//collection name must not be empty
+   {
+        alert("Empty coll name"); 
+	if($('div.alert').length == 0) {
+          flash($this.closest('form'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        }
+        return false; 
+   }
+
+   else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>";
+   document.getElementById("btndiv").innerHTML = ""; }
+   else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>";
+document.getElementById("btndiv").innerHTML = ""; }
+   else
+   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+
+   return true;     
+});
 
   // query functions
   function validateHash(elem) {

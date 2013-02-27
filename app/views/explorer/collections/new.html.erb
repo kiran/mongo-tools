@@ -2,10 +2,13 @@
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
 
-<%= form_tag(explorer_collections_path(current_database_name, current_collection_name), :method=>post do%>
+<%= form_tag(explorer_collections_path(current_database_name, current_collection_name), :method=> :post, :id => 'addcollfrm') do%>
     <fieldset> 
-     
-       Collection name: <%=text_field_tag 'coll'%>
+      <div class ="message">
+         
+      </div>
+       Collection name: 
+       <%=text_field_tag 'coll' , '', :class => 'colltxt' %> <br />
        <%= submit_tag 'Save Collection', :class => 'btn' %>
     </fieldset>  
 <% end %>

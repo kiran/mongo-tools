@@ -9,12 +9,12 @@ class Explorer::CollectionsController < ExplorerController
      conn = MongoMapper.connection
      db = conn.db(current_database_name)
      db.create_collection(params[:coll])
+     redirect_to explorer_collection_path(current_database_name, params[:coll] )
     rescue Exception => ex
-     flash[:error] = exc.message
+     flash[:error] = ex.message
      render :action => :new
     end
-    redirect_to explorer_collection_path(current_database_name, current_collection_name)
-    
+  
   end
 
 #GET
