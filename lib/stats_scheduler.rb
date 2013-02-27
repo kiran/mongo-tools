@@ -4,12 +4,12 @@ require 'mongo'
 include Mongo
 
 class StatsScheduler
-  def initialize(server, host, db_name)
-    @client = MongoClient.new(server, host)
-    @tools_db = @client[db_name]
-
-    @dbs_coll = @tools_db['db_stats']
-    @srv_coll = @tools_db['srv_stats']
+  def initialize(server, port, stats_port, db_name)
+    @client = MongoClient.new(server, port)
+    @stats_client = MongoClient.new(server, stats_port)
+    @stats_db = @stats_client[db_name]
+    @dbs_coll = @stats_db["db_stats"]
+    @srv_coll = @stats_db["srv_stats"]
   end
 
   def collect_statistics
