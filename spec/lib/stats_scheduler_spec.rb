@@ -6,7 +6,7 @@ require "stats_scheduler"
 describe StatsScheduler do
   before do
     test_db_name = "db_test_stats" # TODO: change this
-    @stats_scheduler = StatsScheduler.new("localhost", 27017, test_db_name)
+    @stats_scheduler = StatsScheduler.new("localhost", 27017, 27017, test_db_name)
     @client = MongoClient.new("localhost", 27017)
     @test_db = @client[test_db_name]
     @test_db.drop_collection("db_stats")
