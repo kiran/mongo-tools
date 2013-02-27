@@ -60,20 +60,23 @@ class Evaluator
     @port = port
   end
 
-  def getDb(dbname)
+  def get_db(dbname)
     cl = Mongo::MongoClient.new @addr, @port
     return cl.db(dbname)
   end
 
-  def getColl(namespace)
+  def get_coll(namespace)
     db_name, collection_name = namespace.split('.',2)
-    db = getDb(db_name)
+    db = get_db(db_name)
     coll = db[collection_name]
   end
 
-  # TODO
-  def getIndexInformation(namespace)
-    coll = getColl(namespace)
+  def get_index_information(namespace)
+    if namespace.nil?
+      return {}
+    else
+     return get_coll(namespace).index_information
+    end
   end
 
   # Evaluates the whole query.
@@ -86,15 +89,17 @@ class Evaluator
   # additional arguments may be passed in the args hash:
   # :suggest_indexes => true | false
   # :sort_hash => a hash describing sorting order
+  # :namespace => a collection namespace
   def evaluate_query(query_hash, args = {})
     sort_hash = args[:sort_hash] || {}
     suggest_indexes = args[:suggest_indexes]
+    namespace = args[:namespace]
     if suggest_indexes.nil? then suggest_indexes = true end
 
     out = []
 
     if suggest_indexes then
-        out += check_for_indexes query_hash, sort_hash
+        out += check_for_indexes(query_hash, sort_hash, namespace)
     end
 
     out += analyze_query query_hash
@@ -260,7 +265,7 @@ in the array is not very selective.},
         #e.g. "A" => {"$gt" : 13, "$lt" : 27}
         support = true
         val.each do |op, _|
-          support = false if RANGE_OPERATORS.index(op) == nil
+          support = false unless RANGE_OPERATORS.include? op
         end
         if support
           classified_fields[RANGE_TYPE] << key
@@ -284,7 +289,7 @@ in the array is not very selective.},
     return str
   end
 
-  def check_for_indexes query_hash, sort_hash
+  def check_for_indexes(query_hash, sort_hash, namespace)
     #classified_fields[FieldType][FieldName]
     classified_fields = Array.new(4) {[]}
     recommendation = []
@@ -302,9 +307,67 @@ in the array is not very selective.},
         recommendation << field if recommendation.index(field) == nil
       end
     end
-    return [] if recommendation.size == 0
+    return [] if (recommendation.size == 0 ||
+      needs_recommendation?(classified_fields, recommendation, namespace) == false)
     return [IndexResult.new( generate_index_suggestion(recommendation),
       classified_fields[UNSUPPORTED_TYPE].size == 0 ? IndexResult::GOOD : IndexResult::OPTIONAL )]
+  end
+
+  # Evaluate existing indexes against query. Similar to Dex(https://github.com/mongolab/dex).
+  # The query is evaluated against each index according two criteria:
+  # -Coverage (none, partial, full)
+  #  a less granular description of fields covered.
+  #  None corresponds to Fields Covered 0 and indicates the index is not used by the query.
+  #  Full means the number of fields covered is equal to the number of fields in the query.
+  #  Partial describes any value of fields covered value between None and Full.
+  # -Order (ideal or not)
+  #  describes whether the index is partially-ordered according to ideal index order: Equivalence > Sort > Range
+  def generate_index_report(index, classified_fields, recommendation)
+    max_equal_cnt = classified_fields[EQUAL_TYPE].length
+    max_sort_cnt = max_equal_cnt + classified_fields[SORT_TYPE].length
+    max_range_cnt = max_sort_cnt + classified_fields[RANGE_TYPE].length
+    coverage = 'none'
+    supported = true
+    ideal_order = true
+    query_fields_covered = 0
+
+    index.each do |field_name,val|
+      if val == '2d'
+        supported = false if recommendation.include? field_name
+        break
+      end
+      if !(recommendation.include? field_name)
+        break
+      end
+      if query_fields_covered == 0
+        coverage = 'partial'
+      end
+      if query_fields_covered < max_equal_cnt
+        ideal_order = false if !(classified_fields[EQUAL_TYPE].include? field_name)
+      elsif query_fields_covered < max_sort_cnt
+        ideal_order = false if !(classified_fields[SORT_TYPE].include? field_name)
+      elsif query_fields_covered < max_range_cnt
+        ideal_order = false if !(classified_fields[RANGE_TYPE].include? field_name)
+      end
+      query_fields_covered += 1
+    end
+    coverage = 'full' if query_fields_covered == max_range_cnt
+    return {'coverage' => coverage, 'ideal_order' => ideal_order, 'supported'=> supported}
+  end
+
+  # Return false if the existing indexes is full coverage and in ideal order OR unsupported
+  # otherwise return true.
+  def needs_recommendation?(classified_fields, recommendation, namespace)
+    indexes = get_index_information(namespace)
+    need = true
+    if indexes != nil
+      indexes.each do |_,index|
+        index_report = generate_index_report(index['key'], classified_fields, recommendation)
+        need = false if (!index_report['supported'] ||
+          (index_report['coverage'] == 'full' && index_report['ideal_order']))
+      end
+    end
+    return need
   end
   # ============================================================
 

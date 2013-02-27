@@ -118,5 +118,5 @@ describe Explorer::DocumentsController do
       response.should be_redirect
     end
   end
-
 end
+
