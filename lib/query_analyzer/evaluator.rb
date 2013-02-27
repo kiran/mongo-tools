@@ -99,7 +99,7 @@ class Evaluator
     out = []
 
     if suggest_indexes then
-        out += check_for_indexes query_hash, sort_hash, namespace
+        out += check_for_indexes(query_hash, sort_hash, namespace)
     end
 
     out += analyze_query query_hash
