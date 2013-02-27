@@ -46,7 +46,7 @@ feature "query", :focus => true, :js => true do
     query(input, opts)
     page.should have_table('results')
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "sex": "Male", "age": 22}')
-    page.all('table#results tr').count.should == 1
+    page.should have_css("table#results tr", :count => 1)
   end
 
   scenario "simple query with fields blacklist" do
@@ -59,7 +59,7 @@ feature "query", :focus => true, :js => true do
     query(input, opts)
     page.should have_table 'results'
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "age": 22}')
-    page.all('table#results tr').count.should == 1
+    page.should have_css("table#results tr", :count => 1)
   end
 
   scenario "simple query with fields whitelist" do
@@ -72,7 +72,7 @@ feature "query", :focus => true, :js => true do
     query(input, opts)
     page.should have_table 'results'
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
-    page.all('table#results tr').count.should == 1
+    page.should have_css("table#results tr", :count => 1)
   end
   
   scenario "simple query with explain" do
@@ -93,7 +93,7 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.all('table#results tr').count.should == 2
+    page.should have_css("table#results tr", :count => 2)
     results = [
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}', 
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
@@ -114,7 +114,7 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.all('table#results tr').count.should == 2
+    page.should have_css("table#results tr", :count => 2)
     results = [
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}',
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'
@@ -135,7 +135,7 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.all('table#results tr').count.should == 1
+    page.should have_css("table#results tr", :count => 1)
     page.find('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
   end
 
