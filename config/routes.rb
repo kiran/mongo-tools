@@ -1,4 +1,5 @@
 MongoTools::Application.routes.draw do
+  
   resources :explorer, :only => [:index, :show] do
     scope :module => "explorer" do
       resources :collections, :constraints => { :id => /.*/ } do
@@ -8,6 +9,8 @@ MongoTools::Application.routes.draw do
   end
 
   get "/monitoring" => "monitoring#index"
+
+  get "/sharding" => "sharding#index"
 
   resources :query_analyzer, :only => [:index]
   root :to => redirect("/explorer")
