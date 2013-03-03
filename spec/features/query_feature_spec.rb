@@ -40,7 +40,7 @@ feature "query", :focus => true, :js => true do
     end
   end
 
-   scenario "simple query" do
+  scenario "simple query" do
     input = '"name": "Bob"'
     opts = {'limit' => 10}
     query(input, opts)
@@ -139,6 +139,13 @@ feature "query", :focus => true, :js => true do
     page.find('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
   end
 
+  scenario "empty query" do
+    input = '"name": "Bobby"'
+    opts = {'limit' => 10}
+    query(input, opts)
+    page.should have_table('results')
+    page.should_not have_css("table#results tr")
+  end
 end
 
 
