@@ -45,6 +45,15 @@ Tools we're planning on using:
 * JRuby 1.7.x (Ruby 1.9)
 * Jetpack
 
+Setup
+======
+
+The service collects statistics into a different mongodb instance. To set up:
+	mkdir ~/mongo
+	mongod --dbpath ~/mongo/ --port 27018 &
+
+Happy analytics!
+
 Evaluation
 ==========
 
