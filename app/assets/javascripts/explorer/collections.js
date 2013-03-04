@@ -27,12 +27,17 @@ $(function () {
    }else if(colname.search("system.") == 0)//must not begin with 'system.'
    {
     if($('div.alert').length == 0) {
-          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin with \'system\'');
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin with \'system.\'');
     }
     $('.btn-primary').addClass("disabled");
     $('input[type=submit]').attr('disabled', 'disabled'); 
 
-   }
+   }else if (colname.indexOf(".")==0 || colname.indexOf(".") == colname.length-1) {
+       if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin or end with \'.\'');
+    }
+    $('.btn-primary').addClass("disabled");
+    $('input[type=submit]').attr('disabled', 'disabled');    }
    
 
  })//end 'colltxt'onkeyup()
