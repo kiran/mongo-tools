@@ -7,35 +7,40 @@ $(function () {
   var $this = $(this);
 } */
 
- $('.colltxt').onkeyup( function(){
+ $('.colltxt').keyup( function(){
+  $('.message').empty(); //empties the div
+  $('input[type=submit]').removeAttr('disabled');
   var colname = $('.colltxt').val();
-  colname = trim(colname) 
- }//end 'colltxt'onkeyup()
 
- $('#addcollfrm').submit(function() {
-   
-   var colname = $('.colltxt').val();
-
-   if(colname =="")//collection name must not be empty
+  if(colname.replace(/\s/g, "") =="")//collection name must not be empty
    {
-        alert("Empty coll name"); 
+      // $('.message').append('<div class = alert><strong>Error!</strong> Collection name can\'t be empty.</div>'); 
 	if($('div.alert').length == 0) {
-          flash($this.closest('form'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
         }
-        return false; 
+        $('.btn-primary').addClass("disabled");
+	$('input[type=submit]').attr('disabled', 'disabled'); 
    }
-
    else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
-   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name cannot contain '$' </h3> </div>";
-   document.getElementById("btndiv").innerHTML = ""; }
-   else if(colname.search("system.") == 0)//must not begin with 'system.'
-   {document.getElementById("colldiv").innerHTML = "<div class = \"alert alert-error\"><h3> Collection name can not begin with 'system.'</h3> </div>";
-document.getElementById("btndiv").innerHTML = ""; }
-   else
-   {document.getElementById("colldiv").innerHTML = ""; document.getElementById("btndiv").innerHTML = "<button type=\"submit\" class=\"btn\">Save Collection</button>"}
+   {
+       $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t contain \'$\'</div>'); 
+	if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        }
+      $('input[type=submit]').attr('disabled', 'disabled'); 
 
-   return true;     
-});
+   }else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {
+    if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin with \'system\'');
+    $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t begin with \'system\'</div>'); 
+    $('input[type=submit]').attr('disabled', 'disabled'); 
+
+   }
+   
+
+ })//end 'colltxt'onkeyup()
+
 
   // query functions
   function validateHash(elem) {

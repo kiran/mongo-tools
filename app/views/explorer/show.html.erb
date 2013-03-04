@@ -1,3 +1,5 @@
 <% content_for :sidebar do %>
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
+
+<small><%= link_to "New Collection", new_explorer_collection_path(current_database_name), class: "btn pull-right" if can_edit? %></small>

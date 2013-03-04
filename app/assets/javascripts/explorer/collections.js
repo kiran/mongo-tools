@@ -3,35 +3,33 @@
 
 $(function () {
  
- /*$('.formatted').each(function() {
-  var $this = $(this);
-} */
 
  $('.colltxt').keyup( function(){
-  $('.message').empty(); //empties the div
+  $('.alert alert-error').empty(); //empties the div
   $('input[type=submit]').removeAttr('disabled');
   var colname = $('.colltxt').val();
- 
-  if(colname ==" ")//collection name must not be empty
+
+  if(colname.replace(/\s/g, "") =="")//collection name must not be empty
    {
-       $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t be empty.</div>'); 
-	if($('div.alert').length == 0) {
-          flash($this.closest('div'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
-        }
+        if($('div.alert').length == 0) 
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        $('.btn-primary').addClass("disabled");
 	$('input[type=submit]').attr('disabled', 'disabled'); 
    }
    else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
    {
-       $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t contain \'$\'</div>'); 
 	if($('div.alert').length == 0) {
-          flash($this.closest('form'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
         }
+      $('.btn-primary').addClass("disabled");	
       $('input[type=submit]').attr('disabled', 'disabled'); 
 
    }else if(colname.search("system.") == 0)//must not begin with 'system.'
    {
-    
-    $('.message').append('<div class = \'alert\'><strong>Error!</strong> Collection name can\'t begin with \'system\'</div>'); 
+    if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin with \'system\'');
+    }
+    $('.btn-primary').addClass("disabled");
     $('input[type=submit]').attr('disabled', 'disabled'); 
 
    }

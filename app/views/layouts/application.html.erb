@@ -50,6 +50,7 @@
               <li class="<%= params[:controller].start_with?("explorer") ? "active" : "" %>"><%= link_to "Explorer", explorer_index_path %></li>
               <li class="<%= params[:controller].start_with?("monitoring") ? "active" : "" %>"><%= link_to "Monitoring", monitoring_path %></li>
               <li class="<%= params[:controller].start_with?("query_analyzer") ? "active" : "" %>"><%= link_to "Query Analyzer", query_analyzer_index_path %></li>
+              <li class="<%= params[:controller].start_with?("sharding") ? "active" : "" %>"><%= link_to "Sharding", sharding_path %></li>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
