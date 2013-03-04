@@ -15,7 +15,7 @@ class StatsScheduler
   def collect_statistics
     dbs = @client.database_names
     stats = @client[dbs[0]].command( { serverStatus: 1 } )
-    stats.delete("locks")
+    scrub!(stats)
     time = stats["localTime"]
 
     doc = {"time" => time, "stats" => stats}
@@ -30,5 +30,24 @@ class StatsScheduler
       @dbs_coll.insert(doc)
     end
   end
+  def scrub!(hash)
+    # scrubs the keys of the hash to change offending "." and "$" characters
+    q = [hash]
+    while (!q.empty?)
+      curr = q.pop()
+      curr.keys.each do |key|
+        # replace key with newkey by adding newkey and deleting old key
+        newkey = key
+        if key.include? "." or key.include? "$"
+          newkey = newkey.gsub(".", ",")
+          newkey.gsub!("$", "#")
+          curr[newkey] = curr[key]
+          curr.delete(key)
+        end
+        q << curr[newkey] if curr[newkey].class == Hash
+      end
+    end
+  end
+
 end
 
