@@ -6,8 +6,8 @@ rvm:
   - ruby-head
 
 before_script:
-  - sudo ci/install_phantomjs
-  - "export PATH=phantomjs/bin:$PATH"
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
   - phantomjs --version
 
 script: bundle exec rake spec
