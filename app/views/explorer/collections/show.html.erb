@@ -84,8 +84,12 @@
   </tr>
   <% end %>
 </table>
-<% end %>
+ <small><%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), :method => :delete, class: "btn pull-right"  %></small>
 
+</div>
+
+<% end %>
+ 
 <% else %>
 <div class="alert alert-error">
   <strong>Error!</strong>

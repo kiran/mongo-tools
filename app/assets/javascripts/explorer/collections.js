@@ -2,6 +2,46 @@
 // All this logic will automatically be available in application.js.
 
 $(function () {
+ 
+
+ $('.colltxt').keyup( function(){
+  $('.alert alert-error').empty(); //empties the div
+  $('input[type=submit]').removeAttr('disabled');
+  var colname = $('.colltxt').val();
+
+  if(colname.replace(/\s/g, "") =="")//collection name must not be empty
+   {
+        if($('div.alert').length == 0) 
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        $('.btn-primary').addClass("disabled");
+	$('input[type=submit]').attr('disabled', 'disabled'); 
+   }
+   else if(colname.indexOf("$") !=-1) //collection name must not contain '$'
+   {
+	if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t be empty.');
+        }
+      $('.btn-primary').addClass("disabled");	
+      $('input[type=submit]').attr('disabled', 'disabled'); 
+
+   }else if(colname.search("system.") == 0)//must not begin with 'system.'
+   {
+    if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin with \'system.\'');
+    }
+    $('.btn-primary').addClass("disabled");
+    $('input[type=submit]').attr('disabled', 'disabled'); 
+
+   }else if (colname.indexOf(".")==0 || colname.indexOf(".") == colname.length-1) {
+       if($('div.alert').length == 0) {
+          flash($('#addcollfrm'), 'error', '<strong>Error!</strong> Collection name can\'t begin or end with \'.\'');
+    }
+    $('.btn-primary').addClass("disabled");
+    $('input[type=submit]').attr('disabled', 'disabled');    }
+   
+
+ })//end 'colltxt'onkeyup()
+
 
   var typingTimer;
   var doneTypingInterval = 650;  //time in ms

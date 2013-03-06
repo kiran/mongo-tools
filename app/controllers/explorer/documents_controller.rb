@@ -23,7 +23,7 @@ class Explorer::DocumentsController < ExplorerController
       end
       coll.insert(json)
       flash[:info] = "created successfully"
-      redirect_to explorer_collection_path(current_database_name, current_collection_name)
+      redirect_to explorer_path(current_database_name, current_collection_name)
     rescue Exception => exc
       flash[:error] = exc.message
       @query = params[:query]

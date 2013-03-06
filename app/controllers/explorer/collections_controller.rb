@@ -2,7 +2,38 @@ class Explorer::CollectionsController < ExplorerController
   def index
     redirect_to explorer_path(current_database_name)
   end
+
+ #POST
+  def create
+    begin
+     conn = MongoMapper.connection
+     db = conn.db(current_database_name)
+     db.create_collection(params[:coll])
+     flash[:info] = "The collection was added successfully"
+     redirect_to explorer_collection_path(current_database_name, params[:coll] )
+    rescue Exception => ex
+     flash[:error] = ex.message
+     render :action => :new
+    end
   
+end
+
+  def destroy
+    
+    begin
+     conn = MongoMapper.connection
+     db = conn.db(current_database_name)
+     db.drop_collection(current_collection_name)
+     flash[:info] = "The collection was removed successfully"
+     redirect_to explorer_collections_path(current_database_name)
+    rescue Exception => ex
+     flash[:error] = ex.message
+    end
+  end
+#GET
+  def new
+    
+  end
   def show
     @opts = {}
     #convert string to bool
@@ -25,5 +56,7 @@ class Explorer::CollectionsController < ExplorerController
     @results = current_collection.find(@query, @opts)
     render layout: !request.xhr?
   end
-  
+
+    #code
+
 end
