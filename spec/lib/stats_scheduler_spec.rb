@@ -6,7 +6,7 @@ require "stats_scheduler"
 describe StatsScheduler do
   before do
     test_db_name = "db_test_stats" # TODO: change this
-    @stats_scheduler = StatsScheduler.new("localhost", 27017, 27018, test_db_name)
+    @stats_scheduler = StatsScheduler.new("localhost", 27017, "localhost", 27018, test_db_name)
     @read_client = MongoClient.new("localhost", 27017)
 
     @stats_client = MongoClient.new("localhost", 27018)
@@ -14,9 +14,9 @@ describe StatsScheduler do
     @test_db.drop_collection("db_stats")
     @test_db.drop_collection("srv_stats")
   end
-  describe "#collect_statistics" do
+  describe "#collect_opcounts" do
     before do
-      @stats_scheduler.collect_statistics()
+      @stats_scheduler.collect_opcounts
     end
 
     it "should insert 1 document into db stats collection" do
@@ -35,8 +35,8 @@ describe StatsScheduler do
 
     end
     it "should count 1 insert on a specific database" #TODO
-    it "should count 1 insert on the server database (really 2 right now)" #TODO
-    it "should include all important/necesssary stats" #TODO
+    it "should count 1 insert on the server database" #TODO
+    it "should include all important/necessary stats" #TODO
 
   end
 end
