@@ -17,7 +17,7 @@ before_script:
   - export DISPLAY=:99.0
   - phantomjs --version
 
-script: bundle exec rspec
+script: bundle exec rspec --tag ~statistics
 
 services:
   - mongodb
