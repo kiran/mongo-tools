@@ -33,6 +33,9 @@ describe Evaluator do
     # performance statistics with the index
     after = test_coll.find(query, :hint => index_hash).sort(sort_by).explain
 
+    # remove the newly created index so the method has no side effects
+    test_coll.drop_index(index)
+
     if sort_hash.size > 0
       # The server does not need to sort the outcome.
       expect(after["scanAndOrder"]).to eq(false)
