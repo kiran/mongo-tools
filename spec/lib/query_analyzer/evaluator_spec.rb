@@ -35,7 +35,7 @@ describe Evaluator do
 
     if sort_hash.size > 0
       # The server does not need to sort the outcome.
-      expect(after["scanAndOrder"]).to eq(nil)
+      expect(after["scanAndOrder"]).to eq(false)
     else
       # This assertion makes sure that the testcase is of good quality.
       expect(before["nscanned"]).to be > before["n"]
