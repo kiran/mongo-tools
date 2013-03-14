@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Evaluator do
   let(:evaluator) {
-    Evaluator.new 'localhost', 27017
+    Evaluator.new "localhost", 27017
   }
 
   let(:test_coll_name) {
@@ -35,12 +35,12 @@ describe Evaluator do
 
     if sort_hash.size > 0
       # The server does not need to sort the outcome.
-      expect(after['scanAndOrder']).to eq(nil)
+      expect(after["scanAndOrder"]).to eq(nil)
     else
       # This assertion makes sure that the testcase is of good quality.
-      expect(before['nscanned']).to be > before['n']
+      expect(before["nscanned"]).to be > before["n"]
       # The number of scanned objects is improved.
-      expect(after['nscanned']).to eq(after['n'])
+      expect(after["nscanned"]).to eq(after["n"])
     end
 
     # These statistics are useful during development.
@@ -59,8 +59,8 @@ describe Evaluator do
   # populate database
   before :each do
     # insert some data
-    names = ['Apple', 'Orange']
-    artists = ['Sting', 'Frank Zappa']
+    names = ["Apple", "Orange"]
+    artists = ["Sting", "Frank Zappa"]
     durations = [40,50,60,70]
     prices = [10,20,30]
     ratings = [6,7,8]
@@ -70,12 +70,12 @@ describe Evaluator do
 
     entries.each do |name, artist, duration, price, rating|
       test_coll.insert({
-        'name' => name,
-        'artist' => artist,
-        'duration' => duration,
-        'price' => price,
-        'rating' => rating,
-        'C' => c
+        "name" => name,
+        "artist" => artist,
+        "duration" => duration,
+        "price" => price,
+        "rating" => rating,
+        "C" => c
       })
       c += 1
     end
@@ -83,15 +83,15 @@ describe Evaluator do
 
     # create indexes
     test_coll.ensure_index([
-      ['duration', Mongo::ASCENDING],
-      ['name', Mongo::ASCENDING]
+      ["duration", Mongo::ASCENDING],
+      ["name", Mongo::ASCENDING]
     ])
     test_coll.ensure_index([
-      ['duration', Mongo::ASCENDING],
-      ['rating', Mongo::ASCENDING],
-      ['price', Mongo::ASCENDING]
+      ["duration", Mongo::ASCENDING],
+      ["rating", Mongo::ASCENDING],
+      ["price", Mongo::ASCENDING]
     ])
-    test_coll.create_index([['location', Mongo::GEO2D]])
+    test_coll.create_index([["location", Mongo::GEO2D]])
   end
 
   # clean up collection and indexes
@@ -110,11 +110,11 @@ describe Evaluator do
     it "Parses basic equality queries." do
       perform_query(
         {
-          'field1' => {
-            'sub1' => 3,
-            'sub2' => 'string_val',
+          "field1" => {
+            "sub1" => 3,
+            "sub2" => "string_val",
           },
-          'field2' => 99,
+          "field2" => 99,
         },
         []
       )
@@ -123,38 +123,38 @@ describe Evaluator do
     it "Reports usage of $in with a large array." do
       perform_query(
         {
-          'field1' => {'$gt' => 20 },
-          'field2' => {'$in' => [1]*10000},
+          "field1" => {"$gt" => 20 },
+          "field2" => {"$in" => [1]*10000},
         },
-        [[EfficiencyResult::IN, EfficiencyResult::CRITICAL]]
+        [[:in, :critical]]
       )
     end
 
     it "Reports usage of $nin." do
       perform_query(
         {
-          'field1' => {'$nin' => [1,2,3]},
+          "field1" => {"$nin" => [1,2,3]},
         },
-        [[EfficiencyResult::NEGATION, EfficiencyResult::CRITICAL]]
+        [[:negation, :critical]]
       )
     end
 
     it "Reports usage of $ne." do
       perform_query(
         {
-          'field1' => {'$ne' => 'orange' }
+          "field1" => {"$ne" => "orange" }
         },
-        [[EfficiencyResult::NEGATION, EfficiencyResult::CRITICAL]]
+        [[:negation, :critical]]
       )
     end
 
     it "Parses comparison operators." do
       perform_query(
         {
-          'field1' => {'$lt' => 1},
-          'field2' => {'$lte' => 2},
-          'field3' => {'$gt' => {'sub1' => 2, 'sub2' => 'string' } },
-          'field4' => {'$gte' => 4},
+          "field1" => {"$lt" => 1},
+          "field2" => {"$lte" => 2},
+          "field3" => {"$gt" => {"sub1" => 2, "sub2" => "string" } },
+          "field4" => {"$gte" => 4},
         },
         []
       )
@@ -163,24 +163,24 @@ describe Evaluator do
     it "Reports usage of $all." do
       perform_query(
         {
-          'field1' => {'$all' => [1,2,3,4]},
+          "field1" => {"$all" => [1,2,3,4]},
         },
-        [[EfficiencyResult::ALL, EfficiencyResult::CRITICAL]]
+        [[:all, :critical]]
       )
     end
 
     it "Parses compound queries ($or, $and)." do
-      for op in ['$or', '$and'] do
+      for op in ["$or", "$and"] do
         perform_query(
           {
             op => [
-              {'field1' => 2.15},
-              {'field2' => 'red'},
-              {'field3' => { '$ne' => 15 }},
-              {'field4' => { 'sub1' => 1, 'sub2' => 2 }},
+              {"field1" => 2.15},
+              {"field2" => "red"},
+              {"field3" => { "$ne" => 15 }},
+              {"field4" => { "sub1" => 1, "sub2" => 2 }},
             ]
           },
-          [[EfficiencyResult::NEGATION, EfficiencyResult::CRITICAL]]
+          [[:negation, :critical]]
         )
       end
     end
@@ -188,79 +188,79 @@ describe Evaluator do
     it "Reports usage of $not." do
       perform_query(
         {
-          'field1' => { '$not' => { '$in' => [1,2,3]*10000 } }
+          "field1" => { "$not" => { "$in" => [1,2,3]*10000 } }
         },
-        [[EfficiencyResult::NOT, EfficiencyResult::CRITICAL],
-        [EfficiencyResult::IN, EfficiencyResult::CRITICAL]]
+        [[:not, :critical],
+        [:in, :critical]]
       )
     end
 
     it "Reports usage of $nor and recurses into subqueries." do
       perform_query(
         {
-          '$nor' => [
-            {'field1' => 2.15},
-            {'field2' => 'red'},
-            {'field3' => { '$ne' => 15 }},
-            {'field4' => { 'sub1' => 1, 'sub2' => 2 }},
+          "$nor" => [
+            {"field1" => 2.15},
+            {"field2" => "red"},
+            {"field3" => { "$ne" => 15 }},
+            {"field4" => { "sub1" => 1, "sub2" => 2 }},
           ]
         },
-        [[EfficiencyResult::NOR, EfficiencyResult::CRITICAL],
-        [EfficiencyResult::NEGATION, EfficiencyResult::CRITICAL]]
+        [[:nor, :critical],
+        [:negation, :critical]]
       )
     end
 
     it "Reports inefficient regexes." do
       perform_query(
         {
-          "A" => { "$regex" => "^acme.*corp", "$options" => 'i'},
+          "A" => { "$regex" => "^acme.*corp", "$options" => "i"},
         },
-        [[EfficiencyResult::REGEX_CASE, EfficiencyResult::BAD]]
+        [[:regex_case, :bad]]
       )
 
       perform_query(
         {
           "A" => { "$regex" => "acme.*corp" },
         },
-        [[EfficiencyResult::REGEX_ANCHOR, EfficiencyResult::BAD]]
+        [[:regex_anchor, :bad]]
       )
 
       perform_query(
         {
           "A" => { "$regex" => "^acme.*corp.*$" },
         },
-        [[EfficiencyResult::REGEX_BAD_END, EfficiencyResult::BAD]]
+        [[:regex_bad_end, :bad]]
       )
 
       perform_query(
         {
-          "A" => { "$regex" => "acme.*corp.*", "$options" => 'i'},
+          "A" => { "$regex" => "acme.*corp.*", "$options" => "i"},
         },
-        [[EfficiencyResult::REGEX_CASE, EfficiencyResult::BAD],
-        [EfficiencyResult::REGEX_BAD_END, EfficiencyResult::BAD],
-        [EfficiencyResult::REGEX_ANCHOR, EfficiencyResult::BAD]]
+        [[:regex_case, :bad],
+        [:regex_bad_end, :bad],
+        [:regex_anchor, :bad]]
       )
     end
 
     it "Reports usage of $size." do
       perform_query(
         { "field" => { "$size" => 1 } },
-        [[EfficiencyResult::SIZE, EfficiencyResult::WARNING]]
+        [[:size, :warning]]
       )
     end
 
     it "Reports usage of $where." do
       perform_query(
         {
-          '$where' => 'this.credits == this.debits'
+          "$where" => "this.credits == this.debits"
         },
-        [[EfficiencyResult::WHERE, EfficiencyResult::CRITICAL]]
+        [[:where, :critical]]
       )
     end
 
     it "Raises RuntimeError when an unknown operator is encountered." do
       query = {
-        'A' => {'$brighter_than'=> '#AAFFCC'}
+        "A" => {"$brighter_than"=> "#AAFFCC"}
       }
       expect {
         evaluator.evaluate_query(query, :suggest_indexes => false)
@@ -299,7 +299,7 @@ describe Evaluator do
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to \
         eq("{ 'C': 1, 'duration': 1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
 
       ensureIndexQuality(query, sort_hash, result[0].index)
 
@@ -316,17 +316,17 @@ describe Evaluator do
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to \
         eq ("{ 'name': 1, 'rating': -1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
 
       ensureIndexQuality(query, sort_hash, result[0].index)
 
 
       query = {
-        '$and' => [
-          {'artist' => 'Sting'},
-          {'duration' => 50},
-          {'price' => { '$gt' => 20 }},
-          {'rating' => 6},
+        "$and" => [
+          {"artist" => "Sting"},
+          {"duration" => 50},
+          {"price" => { "$gt" => 20 }},
+          {"rating" => 6},
         ]
       }
       result = evaluator.evaluate_query(query)
@@ -334,7 +334,7 @@ describe Evaluator do
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to \
         eq("{ 'artist': 1, 'duration': 1, 'rating': 1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, {}, result[0].index)
     end
 
@@ -348,7 +348,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'C': 1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::OPTIONAL)
+      expect(result[0].level).to eq(:optional)
       ensureIndexQuality(query, sort_hash, result[0].index)
     end
 
@@ -359,7 +359,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'duration': 1, 'C': -1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, sort_hash, result[0].index)
     end
 
@@ -370,7 +370,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'C': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, sort_hash, result[0].index)
     end
 
@@ -391,7 +391,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'artist': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, {}, result[0].index)
     end
 
@@ -402,7 +402,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'artist': 1, 'name': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, {}, result[0].index)
 
 
@@ -412,7 +412,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, {}, result[0].index)
     end
 
@@ -422,14 +422,14 @@ describe Evaluator do
         :namespace => test_coll_namespace)
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
 
       query = { "duration" => 50, "price" => 20 }
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'duration': 1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, {}, result[0].index)
 
       query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "price" => 30 }
@@ -439,7 +439,7 @@ describe Evaluator do
         :namespace => test_coll_namespace)
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'price': 1, 'rating': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, sort_hash, result[0].index)
     end
 
@@ -491,10 +491,10 @@ describe Evaluator do
       sort_hash = { "artist" => -1, "duration" => -1, "price" => 1 }
 
       test_coll.ensure_index([
-        ['artist', Mongo::DESCENDING],
-        ['rating', Mongo::ASCENDING],
-        ['duration', Mongo::DESCENDING],
-        ['price', Mongo::ASCENDING],
+        ["artist", Mongo::DESCENDING],
+        ["rating", Mongo::ASCENDING],
+        ["duration", Mongo::DESCENDING],
+        ["price", Mongo::ASCENDING],
       ])
 
       result = evaluator.evaluate_query(query,
@@ -513,7 +513,7 @@ describe Evaluator do
 
       expect(result.length).to be >= 1
       expect(result[0].raw_index).to eq("{ 'artist': -1, 'rating': 1, 'duration': -1, 'price': 1 }")
-      expect(result[0].level).to eq(IndexResult::GOOD)
+      expect(result[0].level).to eq(:good)
       ensureIndexQuality(query, sort_hash, result[0].index)
     end
 

@@ -12,21 +12,21 @@ end
 
 class EfficiencyResult < EvaluationResult
   # Severity levels:
-  WARNING = :warning
-  BAD = :bad
-  CRITICAL = :critical
+  # :warning
+  # :bad
+  # :critical
 
-  # Inefficiency codes (chiefly for testing purposes):
-  ALL = :all
-  IN = :in
-  NEGATION = :negation
-  WHERE = :where
-  NOT = :not
-  NOR = :nor
-  REGEX_ANCHOR = :regex_anchor
-  REGEX_CASE = :regex_case
-  REGEX_BAD_END = :regex_bad_end
-  SIZE = :size
+  # Inefficiency codes:
+  # :all
+  # :in
+  # :negation
+  # :where
+  # :not
+  # :nor
+  # :regex_anchor
+  # :regex_case
+  # :regex_bad_end
+  # :size
 
   def initialize(msg, level, code)
     super(msg, level)
@@ -38,21 +38,20 @@ end
 
 
 class IndexResult < EvaluationResult
-  # May ignore some fields or contain too many fields
-  # User should consider whether create this index is worth it.
-  OPTIONAL = :optional
-
-  # Most of time it improves performance
-  GOOD = :good
+  # levels:
+  # :optional - May ignore some fields or contain too many fields.
+  # User should consider whether creating this index is worth it.
+  # :good - Most of time it improves performance
 
   # returns the index serialized as string, e.g.:
   # "{ 'price': 1, 'rating': 1, 'duration': 1 }"
   def raw_index
-    elems = @index.map { |field, type|
-      type_str = type == Mongo::ASCENDING ? '1' : '-1'
+    elems = @index.map do |field, type|
+      type_str = type == Mongo::ASCENDING ? "1" : "-1"
       "'#{field}': #{type_str}"
-    }
-    return "{ " + elems.join(", ") + " }"
+    end
+
+    "{ #{elems.join(", ")} }"
   end
 
   def initialize(index, level)
@@ -72,11 +71,11 @@ class Evaluator
 
   def get_db(dbname)
     cl = Mongo::MongoClient.new @addr, @port
-    return cl.db(dbname)
+    cl.db(dbname)
   end
 
   def get_coll(namespace)
-    db_name, collection_name = namespace.split('.',2)
+    db_name, collection_name = namespace.split(".",2)
     db = get_db(db_name)
     coll = db[collection_name]
   end
@@ -85,7 +84,7 @@ class Evaluator
     if namespace.nil?
       return {}
     else
-     return get_coll(namespace).index_information
+      return get_coll(namespace).index_information
     end
   end
 
@@ -103,31 +102,29 @@ class Evaluator
   def evaluate_query(query_hash, args = {})
     sort_hash = args[:sort_hash] || {}
     suggest_indexes = args[:suggest_indexes]
+    suggest_indexes = true if suggest_indexes.nil?
     namespace = args[:namespace]
-    if suggest_indexes.nil? then suggest_indexes = true end
 
-    out = []
+    result = []
 
-    if suggest_indexes then
-        out += check_for_indexes(query_hash, sort_hash, namespace)
+    if suggest_indexes
+        result += check_for_indexes(query_hash, sort_hash, namespace)
     end
 
-    out += analyze_query query_hash
-    return out
+    result += analyze_query query_hash
+    result
   end
 
   private
 
-  #
-  # the operator handlers follow
-  # every handler returns an array of EfficiencyResult objects
-  # depending on the following arguments
+  # The operator handlers follow.
+  # Every handler returns an array of EfficiencyResult objects
+  # depending on the following arguments:
   # field (self explanatory)
   # operator_arg - the query arguments, specific to different operators
-  #
 
   def handle_all (field, operator_arg)
-    return [
+    [
       EfficiencyResult.new(
         %{\
 In the current release queries that use the $all operator must \
@@ -135,8 +132,8 @@ scan all the documents that match the first element in the query \
 array. As a result, even with an index to support the query, the \
 operation may be long running, particularly when the first element \
 in the array is not very selective.},
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::ALL)
+        :critical,
+        :all)
     ]
   end
 
@@ -144,30 +141,30 @@ in the array is not very selective.},
   def handle_in (field, operator_arg)
     result = []
     elems_no = operator_arg.count
-    if elems_no > MAX_IN_ARRAY then
+    if elems_no > MAX_IN_ARRAY
       result << EfficiencyResult.new(
         "$in operator with a large array (#{elems_no}) is inefficient",
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::IN)
+        :critical,
+        :in)
     end
-    return result
+    result
   end
 
   def handle_negation (field, operator_arg)
-    return [
+    [
       EfficiencyResult.new(
-        'Negation operators ($ne, $nin) are inefficient.',
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::NEGATION)
+        "Negation operators ($ne, $nin) are inefficient.",
+        :critical,
+        :negation)
     ]
   end
 
   def handle_where (field, operator_arg)
-    return [
+    [
       EfficiencyResult.new(
-        'javascript is slow, you should consider redesigning your queries.',
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::WHERE)
+        "javascript is slow, you should consider redesigning your queries.",
+        :critical,
+        :where)
     ]
   end
 
@@ -176,73 +173,76 @@ in the array is not very selective.},
     operator_arg.each do |query|
       res += analyze_query(query)
     end
-    return res
+    res
   end
 
   def handle_not(field, operator_arg)
     res = [
       EfficiencyResult.new(
-        'Negation operator ($not) is inefficient',
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::NOT)
+        "Negation operator ($not) is inefficient",
+        :critical,
+        :not)
     ]
     res += handle_single_field(field, operator_arg)
-    return res
+    res
   end
 
   def handle_nor(field, operator_arg)
     res = [
       EfficiencyResult.new(
-        'Negation operator ($nor) is inefficient',
-        EfficiencyResult::CRITICAL,
-        EfficiencyResult::NOR)
+        "Negation operator ($nor) is inefficient",
+        :critical,
+        :nor)
     ]
     res += handle_multiple(field, operator_arg)
-    return res
+    res
   end
 
   def handle_regex(field, operator_arg)
     res = []
     regex = eval operator_arg
 
-    if not regex.source.start_with? '^' then
+    if !regex.source.start_with?("^")
       res << EfficiencyResult.new(
-        'Try to change the regex so that it has an anchor for the ' +
-        'beginning (i.e. ^). Otherwise the engine cannot make use of ' +
-        'indexes (if there are any).',
-        EfficiencyResult::BAD,
-        EfficiencyResult::REGEX_ANCHOR)
+        %{\
+Try to change the regex so that it has an anchor for the beginning \
+(i.e. ^). Otherwise the engine cannot make use of indexes (if there are any).},
+        :bad,
+        :regex_anchor)
     end
 
-    if regex.casefold? then
+    if regex.casefold?
       res << EfficiencyResult.new(
-        'Case insensitive queries are inefficient. Consider keeping ' +
-        "a lowercase copy of field '#{field}' in your documents.",
-        EfficiencyResult::BAD,
-        EfficiencyResult::REGEX_CASE)
+        %{\
+Case insensitive queries are inefficient. Consider keeping \
+a lowercase copy of field '#{field}' in your documents.},
+        :bad,
+        :regex_case)
     end
 
-    ['.*', '.*$'].each do |bad_end|
-      if regex.source.end_with? bad_end then
+    [".*", ".*$"].each do |bad_end|
+      if regex.source.end_with?(bad_end)
         res << EfficiencyResult.new(
-          "Do you really need #{bad_end} at the end of your regex? "+
-          'It slows down the queries.',
-          EfficiencyResult::BAD,
-          EfficiencyResult::REGEX_BAD_END)
+          %{\
+Do you really need #{bad_end} at the end of your regex? \
+It slows down the queries.},
+          :bad,
+          :regex_bad_end)
       end
     end
 
-    return res
+    res
   end
 
   def handle_size(field, operator_arg)
     [
       EfficiencyResult.new(
-        'Queries cannot use indexes for $size portion of a query. ' +
-        'Consider keeping a separate field holding the array size ' +
-        'and creating an index on it.',
-        EfficiencyResult::WARNING,
-        EfficiencyResult::SIZE)
+        %{\
+Queries cannot use indexes for $size portion of a query. \
+Consider keeping a separate field holding the array size \
+and creating an index on it.},
+        :warning,
+        :size)
     ]
   end
 
@@ -269,7 +269,8 @@ in the array is not very selective.},
     }
     _classify_field! query_hash, classified_fields
     classified_fields[:sort_type] = sort_hash.keys.clone()
-    return classified_fields
+
+    classified_fields
   end
 
   def _classify_field!(query_hash, classified_fields)
@@ -311,13 +312,13 @@ in the array is not very selective.},
     [:equal_type, :sort_type, :range_type].each do |field_type|
       classified_fields[field_type].each do |field|
 
-        if recommended_index.keys.include? field
+        if recommended_index.keys.include?(field)
           # this field has already been handled
           next
         end
 
         order = Mongo::ASCENDING
-        if sort_hash.include? field
+        if sort_hash.include?(field)
           order = sort_hash[field] > 0 ? Mongo::ASCENDING : Mongo::DESCENDING
         end
 
@@ -331,9 +332,9 @@ in the array is not very selective.},
 
     recommended_index = recommended_index.to_a
     if classified_fields[:unsupported_type].size == 0
-      return [IndexResult.new(recommended_index, IndexResult::GOOD)]
+      return [IndexResult.new(recommended_index, :good)]
     else
-      return [IndexResult.new(recommended_index, IndexResult::OPTIONAL)]
+      return [IndexResult.new(recommended_index, :optional)]
     end
   end
 
@@ -357,7 +358,7 @@ in the array is not very selective.},
     index = index.take_while{|k,v| all_fields.include? k}
     index = Hash[*index.flatten]
 
-    if index.values.include? "2d"
+    if index.values.include?("2d")
       return {:geospatial => true, :coverage => nil, :ideal_order => nil}
     end
 
@@ -395,7 +396,7 @@ in the array is not very selective.},
       ideal_order = false
     end
 
-    return {:coverage => coverage, :ideal_order => ideal_order, :geospatial=> false}
+    {:coverage => coverage, :ideal_order => ideal_order, :geospatial=> false}
   end
 
   # This method returns true if it is able to detect that there is an ideal
@@ -410,7 +411,7 @@ in the array is not very selective.},
     end
 
     indexes.each do |_, index|
-      report = generate_index_report(index['key'], classified_fields, sort_hash)
+      report = generate_index_report(index["key"], classified_fields, sort_hash)
 
       # TODO - maybe we can evaluate geospatial indexes instead assuming that
       # they are optimal?
@@ -418,12 +419,12 @@ in the array is not very selective.},
         return true
       end
 
-      if report[:coverage] == :full and report[:ideal_order] == true
+      if (report[:coverage] == :full) && (report[:ideal_order] == true)
         return true
       end
     end
 
-    return false
+    false
   end
   # ============================================================
 
@@ -487,19 +488,19 @@ in the array is not very selective.},
   # then hash remains unchanged
   def normalize_regexes hash
     options = nil
-    if hash.has_key? '$options' then
-      #assert that we have a 'regex' operator
-      if not hash.has_key? '$regex' then
-        raise '$options operator provided, but $regex not present.'
+    if hash.has_key?("$options")
+      #assert that we have a "$regex" operator
+      if !hash.has_key?("$regex")
+        raise "$options operator provided, but $regex not present."
       end
 
-      options = hash['$options']
-      hash.delete('$options')
+      options = hash["$options"]
+      hash.delete("$options")
     end
 
-    if hash.has_key? '$regex' then
-      regex = "/#{hash['$regex']}/#{options}"
-      hash['$regex'] = regex
+    if hash.has_key?("$regex")
+      regex = "/#{hash["$regex"]}/#{options}"
+      hash["$regex"] = regex
     end
   end
 
@@ -518,22 +519,12 @@ in the array is not very selective.},
       end
       res += method( method_symbol ).call field, val
     end
-    return res
+    res
   end
 
   # checks if a hash contains keys that start with a '$'
   def has_operators hash
-    operators_count = 0
-
-    hash.each do |key, val|
-      if key.start_with? '$'
-        operators_count += 1
-      end
-    end
-
-    #XXX - what if operators_count is different than 0 and hash.size
-
-    return operators_count > 0
+    hash.any? { |key, _| key.start_with? "$" }
   end
 
   # This method iterates through all query elements and yields
@@ -541,10 +532,10 @@ in the array is not very selective.},
   # This method is NOT recursive.
   def traverse_query (query_hash)
     query_hash.each do |key, val|
-      if key.start_with? '$' then
+      if key.start_with?("$")
         #e.g. $or => [query1, query2, ...]
         yield :multiple_queries_operator, key, val
-      elsif (val.is_a? Hash) and (has_operators val)
+      elsif (val.is_a? Hash) && (has_operators val)
         #e.g. "A" => {"$gt" : 13, "$lt" : 27}
         yield :field_query, key, val
       else
@@ -555,7 +546,7 @@ in the array is not very selective.},
   end
 
   def analyze_query(query_hash)
-    out = []
+    result = []
     traverse_query query_hash do |type, key, val|
       field = nil
       operator_hash = nil
@@ -570,9 +561,9 @@ in the array is not very selective.},
         field = key
         operator_hash = { "_equality_check" => nil }
       end
-      out += handle_single_field field, operator_hash
+      result += handle_single_field field, operator_hash
     end
-    return out
+    result 
   end
 
 end #class Evaluator
