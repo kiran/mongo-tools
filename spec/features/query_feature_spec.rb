@@ -1,4 +1,6 @@
 require 'spec_helper'
+require "timeout"
+
 
 feature "query", :focus => true, :js => true do
 
@@ -26,6 +28,19 @@ feature "query", :focus => true, :js => true do
     end
   end
 
+  def wait_for_ajax(timeout = Capybara.default_wait_time)
+    wait_until(timeout) do
+      page.evaluate_script 'jQuery.active == 0'
+    end
+  end
+
+  def wait_until(timeout = Capybara.default_wait_time)
+    Timeout.timeout(timeout) do
+      sleep(0.1) until value = yield
+      value
+    end
+  end
+
   def query (input, opts = {})
     within '#collection-form' do
       page.execute_script("$('#query-input').html('#{input}')")
@@ -33,13 +48,13 @@ feature "query", :focus => true, :js => true do
     end
 
     click_button 'submit'
+    
+    wait_for_ajax
 
     within '#collection-form' do
       find('#query-input').should have_content(input)
       opts.each {|k, v| find(:css, "##{k}-input").should have_content(v)}
     end
-
-    sleep 0.5
   end
 
   scenario "simple query" do
@@ -47,8 +62,8 @@ feature "query", :focus => true, :js => true do
     opts = {'limit' => 10}
     query(input, opts)
     page.should have_table('results')
-    page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "sex": "Male", "age": 22}')
-    page.should have_css("table#results tr", :count => 1)
+    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "sex": "Male", "age": 22}')
+    page.should have_selector("table#results tr", :count => 1)
   end
 
   scenario "simple query with fields blacklist" do
@@ -60,8 +75,8 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "age": 22}')
-    page.should have_css("table#results tr", :count => 1)
+    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "age": 22}')
+    page.should have_selector("table#results tr", :count => 1)
   end
 
   scenario "simple query with fields whitelist" do
@@ -73,8 +88,8 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
-    page.should have_css("table#results tr", :count => 1)
+    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
+    page.should have_selector("table#results tr", :count => 1)
   end
 
   scenario "simple query with explain" do
@@ -82,8 +97,8 @@ feature "query", :focus => true, :js => true do
     input = '"name": "Bob"'
     opts = {'limit' => 10}
     query(input, opts)
-    page.should have_css '#results'
-    page.should have_css '.debug_dump'
+    page.should have_selector('#results', :visible => true)
+    page.should have_selector('.debug_dump', :visible => true)
   end
 
   scenario "simple query with sort ascending" do
@@ -95,14 +110,14 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_css("table#results tr", :count => 2)
+    page.should have_selector("table#results tr", :count => 2)
     results = [
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}',
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
     ]
     count = 0
     page.all('table#results tr').each do |row|
-      row.should have_css('a', :text => results[count])
+      row.should have_selector('a', :text => results[count])
       count += 1
     end
   end
@@ -116,14 +131,14 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_css("table#results tr", :count => 2)
+    page.should have_selector("table#results tr", :count => 2)
     results = [
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}',
       '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'
     ]
     count = 0
     page.all('table#results tr').each do |row|
-      row.should have_css('a', :text => results[count])
+      row.should have_selector('a', :text => results[count])
       count += 1
     end
   end
@@ -137,8 +152,8 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_css("table#results tr", :count => 1)
-    page.find('table#results tr').should have_css('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
+    page.should have_selector("table#results tr", :count => 1)
+    page.find('table#results tr').should have_selector('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
   end
 
   scenario "empty query" do
@@ -146,8 +161,7 @@ feature "query", :focus => true, :js => true do
     opts = {'limit' => 10}
     query(input, opts)
     page.should have_table('results')
-    page.should_not have_css("table#results tr")
+    page.should_not have_selector("table#results tr")
   end
 end
-
 
