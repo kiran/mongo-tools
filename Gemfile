@@ -2,14 +2,11 @@ source 'https://rubygems.org'
 
 gem 'rails', '3.2.11'
 gem 'jquery-rails'
-gem 'jbuilder'
 
 gem 'mongo_mapper'
-gem 'bson_ext' unless RUBY_PLATFORM =~ /java/
+gem 'mongo', '>= 1.8.3'
+gem 'bson_ext', '>= 1.8.3' unless RUBY_PLATFORM =~ /java/
 gem 'rufus-scheduler'
-
-gem 'less-rails'
-gem 'twitter-bootstrap-rails'
 
 gem 'codemirror-rails'
 
@@ -18,25 +15,31 @@ gem 'formtastic-bootstrap'
 gem 'crack'
 
 group :assets do
-  gem 'uglifier', '>= 1.0.3'
+  gem 'twitter-bootstrap-rails'
+  gem 'less-rails'
+
+  # required for less
   gem 'therubyracer', :platforms => :ruby
+
+  gem 'uglifier', '>= 1.0.3'
 end
 
-group :development, :test do
+group :development do
   gem 'guard-rails'
   gem 'guard-rspec'
-  gem 'rspec-rails'
-  gem 'capybara'
-  gem 'poltergeist'
+  gem 'guard-spork'
 
+  # requries 'growlnotify' available here: http://growl.info/downloads
   gem 'growl' if RUBY_PLATFORM =~ /darwin/
+
   gem 'wdm', :platforms => [:mswin, :mingw], :require => false
   gem 'rb-inotify', :require => false
   gem 'rb-fsevent', :require => false
   gem 'rb-fchange', :require => false
+end
 
-  # To use debugger
-  # gem 'debugger'
-
-  gem 'thin'
+group :test do
+  gem 'capybara'
+  gem 'poltergeist'
+  gem 'rspec-rails'
 end
