@@ -105,13 +105,16 @@ class Evaluator
     suggest_indexes = true if suggest_indexes.nil?
     namespace = args[:namespace]
 
-    result = []
+    result = {
+      :index => [],
+      :query => []
+    }
 
     if suggest_indexes
-        result += check_for_indexes(query_hash, sort_hash, namespace)
+        result[:index] += check_for_indexes(query_hash, sort_hash, namespace)
     end
 
-    result += analyze_query query_hash
+    result[:query] += analyze_query query_hash
     result
   end
 
@@ -127,11 +130,11 @@ class Evaluator
     [
       EfficiencyResult.new(
         %{\
-In the current release queries that use the $all operator must \
-scan all the documents that match the first element in the query \
-array. As a result, even with an index to support the query, the \
-operation may be long running, particularly when the first element \
-in the array is not very selective.},
+        In the current release queries that use the $all operator must \
+        scan all the documents that match the first element in the query \
+        array. As a result, even with an index to support the query, the \
+        operation may be long running, particularly when the first element \
+        in the array is not very selective.},
         :critical,
         :all)
     ]
@@ -179,7 +182,7 @@ in the array is not very selective.},
   def handle_not(field, operator_arg)
     res = [
       EfficiencyResult.new(
-        "Negation operator ($not) is inefficient",
+        "Negation operator ($not) is inefficient.",
         :critical,
         :not)
     ]
@@ -190,7 +193,7 @@ in the array is not very selective.},
   def handle_nor(field, operator_arg)
     res = [
       EfficiencyResult.new(
-        "Negation operator ($nor) is inefficient",
+        "Negation operator ($nor) is inefficient.",
         :critical,
         :nor)
     ]
@@ -205,8 +208,8 @@ in the array is not very selective.},
     if !regex.source.start_with?("^")
       res << EfficiencyResult.new(
         %{\
-Try to change the regex so that it has an anchor for the beginning \
-(i.e. ^). Otherwise the engine cannot make use of indexes (if there are any).},
+        Try to change the regex so that it has an anchor for the beginning \
+        (i.e. ^). Otherwise the engine cannot make use of indexes (if there are any).},
         :bad,
         :regex_anchor)
     end
@@ -214,8 +217,8 @@ Try to change the regex so that it has an anchor for the beginning \
     if regex.casefold?
       res << EfficiencyResult.new(
         %{\
-Case insensitive queries are inefficient. Consider keeping \
-a lowercase copy of field '#{field}' in your documents.},
+        Case insensitive queries are inefficient. Consider keeping \
+        a lowercase copy of field '#{field}' in your documents.},
         :bad,
         :regex_case)
     end
@@ -224,8 +227,8 @@ a lowercase copy of field '#{field}' in your documents.},
       if regex.source.end_with?(bad_end)
         res << EfficiencyResult.new(
           %{\
-Do you really need #{bad_end} at the end of your regex? \
-It slows down the queries.},
+          Do you really need #{bad_end} at the end of your regex? \
+          It slows down the queries.},
           :bad,
           :regex_bad_end)
       end
@@ -238,11 +241,20 @@ It slows down the queries.},
     [
       EfficiencyResult.new(
         %{\
-Queries cannot use indexes for $size portion of a query. \
-Consider keeping a separate field holding the array size \
-and creating an index on it.},
+        Queries cannot use indexes for $size portion of a query. \
+        Consider keeping a separate field holding the array size \
+        and creating an index on it.},
         :warning,
         :size)
+    ]
+  end
+  # Mentioned inhttp://oreillynet.com/pub/e/1772
+  def handle_mod(field, operator_arg)
+    [
+      EfficiencyResult.new(
+        "Queries caonnot use indexes for $mod portion of a query." ,
+        :warning,
+        :mod)
     ]
   end
 
@@ -267,7 +279,7 @@ and creating an index on it.},
       :range_type  => [],
       :unsupported_type => [],
     }
-    _classify_field! query_hash, classified_fields
+    _classify_field!(query_hash, classified_fields)
     classified_fields[:sort_type] = sort_hash.keys.clone()
 
     classified_fields
@@ -277,8 +289,9 @@ and creating an index on it.},
     traverse_query query_hash do |type, key, val|
       case type
       when :multiple_queries_operator
-        # e.g "$or" => [ ... ]
-        val.each { |sub| _classify_field!(sub, classified_fields) }
+        # skip "$nor" for it cannot use indexes
+        # "$or" will be handled in check_for_indexes
+        val.each { |sub| _classify_field!(sub, classified_fields) } if (key =="$and")
       when :field_query
         #e.g. "A" => {"$gt" : 13, "$lt" : 27}
         support = true
@@ -298,6 +311,17 @@ and creating an index on it.},
   end
 
   def check_for_indexes(query_hash, sort_hash, namespace)
+    # When using indexes with $or queries each clause of an $or query will execute in parallel
+    # So find indexes for each clause rather than a compound indexes for whole query.
+    # Note: when using the $or operator with the sort() method in a query,
+    # the query will not use the indexes on the $or fields.
+    # (http://docs.mongodb.org/manual/reference/operator/or/#_S_or)
+    result = []
+    if (!query_hash.empty? && query_hash.keys.first == "$or" && sort_hash.empty?)
+      query_hash["$or"].each {|clause| result += check_for_indexes(clause, sort_hash, namespace)}
+      return result
+    end
+
     classified_fields = classify_fields(query_hash, sort_hash)
 
     if has_ideal_index?(classified_fields, sort_hash, namespace)
@@ -395,7 +419,6 @@ and creating an index on it.},
     if sort_manner != sort_hash.to_a
       ideal_order = false
     end
-
     {:coverage => coverage, :ideal_order => ideal_order, :geospatial=> false}
   end
 
@@ -409,7 +432,6 @@ and creating an index on it.},
     if indexes.nil?
       return false
     end
-
     indexes.each do |_, index|
       report = generate_index_report(index["key"], classified_fields, sort_hash)
 
@@ -423,7 +445,6 @@ and creating an index on it.},
         return true
       end
     end
-
     false
   end
   # ============================================================
@@ -452,7 +473,7 @@ and creating an index on it.},
 
     # element
     "$exists" => :empty_handle, #TODO
-    "$mod" => :empty_handle, #TODO
+    "$mod" => :handle_mod,
     "$type" => :empty_handle, #TODO
 
     # javascript

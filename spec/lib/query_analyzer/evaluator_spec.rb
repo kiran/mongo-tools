@@ -17,7 +17,7 @@ describe Evaluator do
     MongoMapper.database.collection(test_coll_name)
   }
 
-  def ensureIndexQuality(query, sort_hash, index)
+  def ensureIndexQuality(query, sort_hash, index, hint = true)
     #convert sort_hash into an array accepted by the Ruby driver
     sort_by = []
     sort_hash.each do |field, val|
@@ -27,14 +27,25 @@ describe Evaluator do
     # performance statistics without the index
     before = test_coll.find(query).sort(sort_by).explain
 
-    test_coll.ensure_index(index)
-    index_hash = {}
-    index.each { |a,b| index_hash[a] = b }
-    # performance statistics with the index
-    after = test_coll.find(query, :hint => index_hash).sort(sort_by).explain
+    if hint
+      test_coll.ensure_index(index[0].index)
+      index_hash = {}
+      index[0].index.each { |a,b| index_hash[a] = b }
+      # performance statistics with the index
+      after = test_coll.find(query, :hint => index_hash).sort(sort_by).explain
 
-    # remove the newly created index so the method has no side effects
-    test_coll.drop_index(index)
+      # remove the newly created index so the method has no side effects
+      test_coll.drop_index(index[0].index)
+    else
+      index.each{|sub| test_coll.ensure_index(sub.index)}
+
+      # performance statistics with the index
+      after = test_coll.find(query).sort(sort_by).explain
+
+      # remove the newly created index so the method has no side effects
+      index.each{|sub| test_coll.drop_index(sub.index)}
+    end
+
 
     if sort_hash.size > 0
       # The server does not need to sort the outcome.
@@ -50,6 +61,7 @@ describe Evaluator do
     # I'm commenting it out to keep the rspec test suite silent. If you want to
     # uncomment it, I recommend running rspec with '--format documentation'
     #
+
     # printf "%20s: %s\n", "query", query
     # printf "%20s: %s\n", "sort_hash", sort_hash
     # printf "%20s: %s\n", "index", index
@@ -104,8 +116,8 @@ describe Evaluator do
 
   def perform_query(query, expected_outcome)
     result = evaluator.evaluate_query(query, :suggest_indexes => false)
-    result.map! {|er| [er.code, er.level]}
-    expect(result.sort).to eq(expected_outcome.sort)
+    result[:query].map! {|er| [er.code, er.level]}
+    expect(result[:query].sort).to eq(expected_outcome.sort)
   end
 
   context "Given a query to evaluate:" do
@@ -261,6 +273,15 @@ describe Evaluator do
       )
     end
 
+     it "Reports usage of $mod." do
+      perform_query(
+        {
+          "field" => { "$mod" => [4,0] }
+        },
+        [[:mod, :warning]]
+      )
+    end
+
     it "Raises RuntimeError when an unknown operator is encountered." do
       query = {
         "A" => {"$brighter_than"=> "#AAFFCC"}
@@ -299,12 +320,12 @@ describe Evaluator do
       sort_hash = { "C" => 1.0 }
       result =  evaluator.evaluate_query(query, :sort_hash => sort_hash)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to \
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to \
         eq("{ 'C': 1, 'duration': 1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
+      expect(result[:index][0].level).to eq(:good)
 
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      ensureIndexQuality(query, sort_hash, result[:index])
 
 
       # example given by
@@ -316,12 +337,12 @@ describe Evaluator do
       sort_hash = { "rating" => -1.0 }
       result =  evaluator.evaluate_query(query, :sort_hash => sort_hash)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to \
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to \
         eq ("{ 'name': 1, 'rating': -1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
+      expect(result[:index][0].level).to eq(:good)
 
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      ensureIndexQuality(query, sort_hash, result[:index])
 
 
       query = {
@@ -334,11 +355,79 @@ describe Evaluator do
       }
       result = evaluator.evaluate_query(query)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to \
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to \
         eq("{ 'artist': 1, 'duration': 1, 'rating': 1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, {}, result[0].index)
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index])
+    end
+
+    it "Suggest indexes for queries with composite operators" do
+      query = {
+        "$nor" => [
+          {"artist" => "Sting"},
+          {"duration" => 50},
+          {"price" => { "$gt" => 20 }},
+          {"rating" => 6},
+        ]
+      }
+      result = evaluator.evaluate_query(query)
+
+      expect(result[:index]).to eq([])
+
+      query = {
+        "$or" => [
+          {"artist" => "Sting","rating" => 8},
+          {"duration" => 50,"rating" => 4},
+          {"price" => { "$gt" => 30 }},
+        ]
+      }
+      result = evaluator.evaluate_query(query,:namespace => test_coll_namespace)
+
+      # we already have indexes for duration:1 rating:1
+      expect(result[:index].length).to eq(2)
+      expect(result[:index][0].raw_index).to eq("{ 'artist': 1, 'rating': 1 }")
+      expect(result[:index][1].raw_index).to eq("{ 'price': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, {}, result[:index], false)
+
+
+      query = {
+        "$or" => [
+          {"artist" => "Sting","rating" => 8},
+          {"duration" => 50,"rating" => 4},
+          {"price" => { "$gt" => 30 }},
+        ]
+      }
+      sort_hash = {"name" => 1.0}
+      result = evaluator.evaluate_query(query,
+        :namespace => test_coll_namespace,
+        :sort_hash => sort_hash)
+
+      # we already have indexes for duration:1 rating:1
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to eq("{ 'name': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index], false)
+
+      query = {
+        "$or" => [
+          {"artist" => "Sting"},
+          {"duration" => 50},
+          {"price" => { "$gt" => 20 }},
+          {"rating" => 6},
+        ]
+      }
+      result = evaluator.evaluate_query(query,:namespace => test_coll_namespace)
+      # we already have indexes for duration
+      expect(result[:index].length).to eq(3)
+      expect(result[:index][0].raw_index).to eq("{ 'artist': 1 }")
+      expect(result[:index][1].raw_index).to eq("{ 'price': 1 }")
+      expect(result[:index][2].raw_index).to eq("{ 'rating': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      # Note:those indexes will increase nscanned number
+      # because clauses match many duplicate records with each others
+      # ensureIndexQuality(query, {}, result[:index], false)
     end
 
     it "Does not suggest indexes for fields with unsupported operators." do
@@ -349,10 +438,10 @@ describe Evaluator do
       sort_hash = { "C" => 1.0 }
       result = evaluator.evaluate_query(query, :sort_hash => sort_hash)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'C': 1, 'price': 1 }")
-      expect(result[0].level).to eq(:optional)
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'C': 1, 'price': 1 }")
+      expect(result[:index][0].level).to eq(:optional)
+      ensureIndexQuality(query, sort_hash, result[:index])
     end
 
     it "Handles equal, range and sort operators." do
@@ -360,10 +449,10 @@ describe Evaluator do
       sort_hash = { "C" => -1.0 }
       result =  evaluator.evaluate_query(query, :sort_hash => sort_hash)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'duration': 1, 'C': -1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'duration': 1, 'C': -1, 'price': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index])
     end
 
     it "Suggests a proper index for sorting purposes." do
@@ -371,20 +460,20 @@ describe Evaluator do
       sort_hash = { "C" => 1.0 }
       result = evaluator.evaluate_query(query, :sort_hash => sort_hash)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'C': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'C': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index])
     end
 
     it "Recommends no index for queries that do not need one." do
       query = {}
       result =  evaluator.evaluate_query(query)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
 
       query = {"location" => { "$near" => [100,100] }}
       result =  evaluator.evaluate_query(query)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "Recommends index which is better than existing one(coverage == none)." do
@@ -392,10 +481,10 @@ describe Evaluator do
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'artist': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, {}, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'artist': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, {}, result[:index])
     end
 
     it "Recommends index which is better than existing one(coverage == partial)." do
@@ -403,54 +492,54 @@ describe Evaluator do
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'artist': 1, 'name': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, {}, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'artist': 1, 'name': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, {}, result[:index])
 
 
       query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "name" => "Apple" }
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, {}, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, {}, result[:index])
     end
 
     it "Recommends index which is better than existing one(coverage == full, idealorder == false)." do
       query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "name" => "Orange" }
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(:good)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'name': 1, 'duration': 1 }")
+      expect(result[:index][0].level).to eq(:good)
 
       query = { "duration" => 50, "price" => 20 }
       result =  evaluator.evaluate_query(query,
         :namespace => test_coll_namespace)
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'duration': 1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, {}, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'duration': 1, 'price': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, {}, result[:index])
 
       query = { "duration" => { "$gte" => 50, "$lte" => 60 }, "price" => 30 }
       sort_hash = { "rating" => 1.0 }
       result =  evaluator.evaluate_query(query,
         :sort_hash => sort_hash,
         :namespace => test_coll_namespace)
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'price': 1, 'rating': 1, 'duration': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'price': 1, 'rating': 1, 'duration': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index])
     end
 
     it "Recommends no index which is equal to existing one." do
       query = { "duration" => 50, "name" => "Orange" }
       result =  evaluator.evaluate_query(query,
                                          :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
 
       query = { "price" => { "$gte" => 15, "$lte" => 30 }, "duration" => 50 }
       sort_hash = { "rating" => 1.0 }
@@ -458,34 +547,33 @@ describe Evaluator do
         query,
         :sort_hash => sort_hash,
         :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "Recommends no index which is a prefix of existing one" do
       query = { "duration" => 50}
       sort_hash = { "rating" => 1.0 }
-
       result =  evaluator.evaluate_query(
         query, :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
 
       result =  evaluator.evaluate_query(
         query, :sort_hash => sort_hash, :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "Recommends no index which is logically equal to existing one." do
       query = { "name" => "Orange", "duration" => 50}
       result =  evaluator.evaluate_query(
         query, :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "Recommends no index when geospatial indexes are encountered" do
       query = { "location" => [-100, 100] }
       result =  evaluator.evaluate_query(
         query, :namespace => test_coll_namespace)
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "When evaluating existing indexes, does not require " +
@@ -504,7 +592,7 @@ describe Evaluator do
         :sort_hash => sort_hash,
         :namespace => test_coll_namespace)
 
-      expect(result).to eq([])
+      expect(result[:index]).to eq([])
     end
 
     it "Pays attention to the sorting order." do
@@ -514,10 +602,10 @@ describe Evaluator do
         :sort_hash => sort_hash,
         :namespace => test_coll_namespace)
 
-      expect(result.length).to be >= 1
-      expect(result[0].raw_index).to eq("{ 'artist': -1, 'rating': 1, 'duration': -1, 'price': 1 }")
-      expect(result[0].level).to eq(:good)
-      ensureIndexQuality(query, sort_hash, result[0].index)
+      expect(result[:index].length).to be >= 1
+      expect(result[:index][0].raw_index).to eq("{ 'artist': -1, 'rating': 1, 'duration': -1, 'price': 1 }")
+      expect(result[:index][0].level).to eq(:good)
+      ensureIndexQuality(query, sort_hash, result[:index])
     end
 
   end # context
