@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-gem 'rails', '3.2.11'
+gem 'rails', '3.2.13'
 gem 'jquery-rails'
 
 gem 'mongo_mapper'
@@ -36,6 +36,9 @@ group :development do
   gem 'rb-inotify', :require => false
   gem 'rb-fsevent', :require => false
   gem 'rb-fchange', :require => false
+
+  gem 'pry-rescue'
+  gem 'pry-nav'
 end
 
 group :test do
