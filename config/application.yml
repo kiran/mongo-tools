@@ -1,0 +1,16 @@
+defaults: &defaults
+  mongo: &mongo_defaults
+    host: 127.0.0.1
+    port: 27017
+
+development:
+  <<: *defaults
+
+test:
+  <<: *defaults
+  mongo:
+    <<: *mongo_defaults
+    database: mongo_tools_test
+
+production:
+  <<: *defaults

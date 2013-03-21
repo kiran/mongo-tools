@@ -14,6 +14,8 @@ gem 'formtastic'
 gem 'formtastic-bootstrap'
 gem 'crack'
 
+gem 'settingslogic'
+
 group :assets do
   gem 'twitter-bootstrap-rails'
   gem 'less-rails'
