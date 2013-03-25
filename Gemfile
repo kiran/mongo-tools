@@ -5,7 +5,7 @@ gem 'jquery-rails'
 
 gem 'mongo_mapper'
 gem 'mongo', '>= 1.8.3'
-gem 'bson_ext', '>= 1.8.3' unless RUBY_PLATFORM =~ /java/
+gem 'bson_ext', '>= 1.8.3', :platforms => [:ruby, :mswin, :mingw]
 gem 'rufus-scheduler'
 
 gem 'codemirror-rails'
@@ -19,7 +19,8 @@ group :assets do
   gem 'less-rails'
 
   # required for less
-  gem 'therubyracer', :platforms => :ruby
+  gem 'therubyracer', :platforms => [:ruby]
+  gem 'therubyrhino', :platforms => [:jruby]
 
   gem 'uglifier', '>= 1.0.3'
 end
@@ -45,4 +46,5 @@ group :test do
   gem 'capybara'
   gem 'poltergeist'
   gem 'rspec-rails'
+  gem 'spork'
 end
