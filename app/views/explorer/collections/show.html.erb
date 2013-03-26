@@ -84,7 +84,7 @@
   </tr>
   <% end %>
 </table>
- <small><%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), :method => :delete, class: "btn pull-right"  %></small>
+<%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), :method => :delete, class: "btn pull-right" unless request.xhr? %>
 
 </div>
 
