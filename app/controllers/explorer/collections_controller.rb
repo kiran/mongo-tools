@@ -3,7 +3,6 @@ class Explorer::CollectionsController < ExplorerController
     redirect_to explorer_path(current_database_name)
   end
 
- #POST
   def create
     begin
      conn = MongoMapper.connection
@@ -15,11 +14,9 @@ class Explorer::CollectionsController < ExplorerController
      flash[:error] = ex.message
      render :action => :new
     end
-  
-end
+  end
 
   def destroy
-    
     begin
      conn = MongoMapper.connection
      db = conn.db(current_database_name)
@@ -30,10 +27,7 @@ end
      flash[:error] = ex.message
     end
   end
-#GET
-  def new
-    
-  end
+
   def show
     @opts = {}
     #convert string to bool
@@ -56,7 +50,5 @@ end
     @results = current_collection.find(@query, @opts)
     render layout: !request.xhr?
   end
-
-    #code
 
 end

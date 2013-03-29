@@ -13,7 +13,15 @@ Spork.prefork do
   require 'capybara/rspec'
   require 'capybara/rails'
   require 'capybara/poltergeist'
-  require 'capybara_wait_until'
+
+  # patch for wait_until in Capybara 2.0+
+  module Capybara
+    class Session
+      def wait_until(timeout = Capybara.default_wait_time)
+        Capybara.send(:timeout, timeout, driver) { yield }
+      end unless defined?(wait_until)
+    end
+  end
 
   Capybara.javascript_driver = :poltergeist
 

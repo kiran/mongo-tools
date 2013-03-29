@@ -8,5 +8,5 @@
         <legend><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / New Document</legend>
         <%= text_area_tag 'query', @query, :class => 'formatted' %>
         <%= submit_tag 'Save Document', :class => 'btn btn-primary' %>
-    </fieldset>  
+    </fieldset>
 <% end %>

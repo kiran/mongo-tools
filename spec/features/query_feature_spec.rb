@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 feature "query", :focus => true, :js => true do
-  
+
   #Sets the collection name, so it's not hardcoded
   $test_collection_name = ""
   let(:test_collection_name) do
@@ -18,12 +18,12 @@ feature "query", :focus => true, :js => true do
     coll.insert({'_id'=> BSON::ObjectId('51243e3fa588a7ea2216d63d'), 'name'=> 'Anne', 'sex' => 'Female', 'age' => 99})
     visit "/explorer/#{MongoMapper.database.name}/collections/#{$test_collection_name}"
   end
-  
+
   #clean up database
   after :each do
-    MongoMapper.database.collections.each do |coll| 
-      coll.remove 
-    end 
+    MongoMapper.database.collections.each do |coll|
+      coll.remove
+    end
   end
 
   def query (input, opts = {})
@@ -34,7 +34,7 @@ feature "query", :focus => true, :js => true do
 
     click_button 'submit'
 
-    within '#collection-form' do 
+    within '#collection-form' do
       find('#query-input').should have_content(input)
       opts.each_pair {|k, v| find(:css, "##{k}-input").should have_content(v)}
     end
@@ -74,7 +74,7 @@ feature "query", :focus => true, :js => true do
     page.should have_css('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
     page.should have_css("table#results tr", :count => 1)
   end
-  
+
   scenario "simple query with explain" do
     click_button 'explain'
     input = '"name": "Bob"'
@@ -87,7 +87,7 @@ feature "query", :focus => true, :js => true do
   scenario "simple query with sort ascending" do
     click_button 'sort'
     input = '"sex": "Female"'
-    opts = { 
+    opts = {
       'sort' => '"age": 1',
       'limit' => 10
     }
@@ -95,7 +95,7 @@ feature "query", :focus => true, :js => true do
     page.should have_table 'results'
     page.should have_css("table#results tr", :count => 2)
     results = [
-      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}', 
+      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}',
       '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
     ]
     count = 0
@@ -108,7 +108,7 @@ feature "query", :focus => true, :js => true do
   scenario "simple query with sort descending" do
     click_button 'sort'
     input = '"sex": "Female"'
-    opts = { 
+    opts = {
       'sort' => '"age": -1',
       'limit' => 10
     }
