@@ -1,6 +1,8 @@
 .DS_Store
-/.bundle
-/log/*.log
-/tmp
+.bundle
+log/*.log
+tmp
 *.swp
 .powrc
+coverage
+.coveralls.yml

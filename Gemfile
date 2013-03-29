@@ -43,6 +43,9 @@ group :development do
 end
 
 group :test do
+  gem 'coveralls', require: false
+  gem 'tailor'
+
   gem 'capybara'
   gem 'poltergeist'
   gem 'rspec-rails'
