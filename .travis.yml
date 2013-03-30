@@ -5,7 +5,19 @@ rvm:
   - jruby-19mode
   - ruby-head
 
-script: "export DISPLAY=:99.0 && bundle exec rspec"
+env: TRAVIS=true
+
+before_install:
+  - gem update --system
+  - gem --version
+
+bundler_args: --without development
+
+before_script:
+  - export DISPLAY=:99.0
+  - phantomjs --version
+
+script: bundle exec rspec
 
 services:
   - mongodb

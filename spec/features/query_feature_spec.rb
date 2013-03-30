@@ -29,15 +29,17 @@ feature "query", :focus => true, :js => true do
   def query (input, opts = {})
     within '#collection-form' do
       page.execute_script("$('#query-input').html('#{input}')")
-      opts.each_pair {|k, v| page.execute_script("$('##{k}-input').html('#{v}')")}
+      opts.each {|k, v| page.execute_script("$('##{k}-input').html('#{v}')")}
     end
 
     click_button 'submit'
 
     within '#collection-form' do
       find('#query-input').should have_content(input)
-      opts.each_pair {|k, v| find(:css, "##{k}-input").should have_content(v)}
+      opts.each {|k, v| find(:css, "##{k}-input").should have_content(v)}
     end
+
+    sleep 0.5
   end
 
   scenario "simple query" do
