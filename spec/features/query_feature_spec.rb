@@ -62,8 +62,12 @@ feature "query", :focus => true, :js => true do
     opts = {'limit' => 10}
     query(input, opts)
     page.should have_table('results')
-    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "sex": "Male", "age": 22}')
     page.should have_selector("table#results tr", :count => 1)
+    result = JSON.parse(find('table#results a').text)
+    expect(result['_id']).to have_text '510571677af4a25da80355c8'
+    expect(result['name']).to have_text 'Bob'
+    expect(result['sex']).to have_text 'Male'
+    expect(result['age']).to have_text 22
   end
 
   scenario "simple query with fields blacklist" do
@@ -75,8 +79,11 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "name": "Bob", "age": 22}')
     page.should have_selector("table#results tr", :count => 1)
+    result = JSON.parse(find('table#results a').text)
+    expect(result['_id']).to have_text '510571677af4a25da80355c8'
+    expect(result['name']).to have_text 'Bob'
+    expect(result['age']).to have_text 22
   end
 
   scenario "simple query with fields whitelist" do
@@ -88,8 +95,10 @@ feature "query", :focus => true, :js => true do
     }
     query(input, opts)
     page.should have_table 'results'
-    page.should have_selector('a', :text => '{ "_id": "510571677af4a25da80355c8", "sex": "Male"}')
     page.should have_selector("table#results tr", :count => 1)
+    result = JSON.parse(find('table#results a').text)
+    expect(result['_id']).to have_text '510571677af4a25da80355c8'
+    expect(result['sex']).to have_text 'Male'
   end
 
   scenario "simple query with explain" do
@@ -112,12 +121,16 @@ feature "query", :focus => true, :js => true do
     page.should have_table 'results'
     page.should have_selector("table#results tr", :count => 2)
     results = [
-      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}',
-      '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'
+      JSON.parse('{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'),
+      JSON.parse('{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
     ]
     count = 0
     page.all('table#results tr').each do |row|
-      row.should have_selector('a', :text => results[count])
+      result = JSON.parse(row.text)
+      expect(result['_id']).to have_text results[count]['_id']
+      expect(result['name']).to have_text results[count]['name']
+      expect(result['sex']).to have_text results[count]['sex']
+      expect(result['age']).to have_text results[count]['age']
       count += 1
     end
   end
@@ -133,12 +146,16 @@ feature "query", :focus => true, :js => true do
     page.should have_table 'results'
     page.should have_selector("table#results tr", :count => 2)
     results = [
-      '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}',
-      '{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}'
+      JSON.parse('{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}'),
+      JSON.parse('{ "_id": "51243e3ca588a7ea2216d63a", "name": "Sue", "sex": "Female", "age": 27}')
     ]
     count = 0
     page.all('table#results tr').each do |row|
-      row.should have_selector('a', :text => results[count])
+      result = JSON.parse(row.text)
+      expect(result['_id']).to have_text results[count]['_id']
+      expect(result['name']).to have_text results[count]['name']
+      expect(result['sex']).to have_text results[count]['sex']
+      expect(result['age']).to have_text results[count]['age']
       count += 1
     end
   end
@@ -153,7 +170,11 @@ feature "query", :focus => true, :js => true do
     query(input, opts)
     page.should have_table 'results'
     page.should have_selector("table#results tr", :count => 1)
-    page.find('table#results tr').should have_selector('a', :text => '{ "_id": "51243e3fa588a7ea2216d63d", "name": "Anne", "sex": "Female", "age": 99}')
+    result = JSON.parse(find('table#results a').text)
+    expect(result['_id']).to have_text '51243e3fa588a7ea2216d63d'
+    expect(result['name']).to have_text 'Anne'
+    expect(result['sex']).to have_text 'Female'
+    expect(result['age']).to have_text 99
   end
 
   scenario "empty query" do
