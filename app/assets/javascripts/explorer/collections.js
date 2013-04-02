@@ -114,20 +114,26 @@ $(function () {
     $('#span-' + $(this).data()['field']).toggle();
     return false;
   });
+  
+  $('#create-coll').on('click', function () {
+    $('#create-modal').modal();
+  });
 
   $('#languages-dropdown > li').on('click', function () {
     if (validateFields()) {
       var out = $('#query');
       var selection = $(this).attr('id');
       if (selection != "0") {
-        var mode = (selection == "node") ? "javascript" : selection;
-
+        var type = (selection == "node") ? "javascript" : 'text/x-' + selection;
         var editor = CodeMirror.fromTextArea(out.get(0), {
             path: "/assets/codemirror",
-            mode: {
-                name: mode
-            },
+            mode: type,
             tabSize: 2,
+            gutter: true,
+            lineNumbers: true,
+            showCursorWhenSelecting: true,
+            autofocus: true,
+            theme: 'solarized',
             matchBrackets: 1
         });
 
@@ -144,19 +150,19 @@ $(function () {
           }
         });
 
-        params["explain"] = eval($("#span-explain").is(":visible"));
+        params["explain"] = $("#span-explain").is(":visible");
         var query = lang.import() + lang.before() + lang.query(params);
         editor.setValue(query);
         var totalLines = editor.lineCount();
-        if(mode != "javascript") {
+        if(type != "javascript") {
           editor.autoFormatRange({line:0, ch:0}, {line:totalLines - 1, ch:editor.getLine(totalLines - 1).length});
         }
-        editor.setCursor({line:0,chr:0});
+        editor.setCursor({line:0,ch:0});
         out.data('CodeMirrorInstance', editor);
         $('#modal-language').html(selection.charAt(0).toUpperCase() + selection.substr(1).toLowerCase());
         $('#languages-modal').modal().css({
            'width': function () {
-               return ($(document).width() * .3) + 'px';
+               return ($(document).width() * .4) + 'px';
            }});
       }
     }
@@ -181,7 +187,7 @@ $(function () {
     $('#query').empty().hide();
   });
 
-  function formatHash(ret, key, value) {
+  function formatRubyHash(ret, key, value) {
     switch(typeof value){
       case "string":
         return ret + '"' + key + '" => "' + value + '"';
@@ -196,7 +202,7 @@ $(function () {
           $.each(value, function(k, v) {
             if(value.hasOwnProperty(k)) {
               ret += "{";
-              ret = formatHash(ret, k, v);
+              ret = formatRubyHash(ret, k, v);
               ret += "}";
             }
           });
@@ -209,58 +215,64 @@ $(function () {
     }
   };
 
-  function isNumber(n) {
-    return !isNaN(parseFloat(n)) && isFinite(n);
-  };
-
   var language_formatters = {
-    node: {
+    ruby: {
       import: function() {
-        return "var MongoClient = require('mongodb').MongoClient;\n" +
-                "var Server = require('mongodb').Server;\n";
+        return "require 'mongo'\ninclude Mongo\n";
       },
 
-      before: function() {
-        return "var mongoClient = new MongoClient(new Server('localhost', 27017));\n" +
-                "mongoClient.open(function(err, mongoClient) {\n" +
-                "\tvar db = mongoClient.db('" + current_database_name + "');\n";
+      before: function () {
+        return 'mongo_client = MongoClient.new\n' +
+          'db = mongo_client.db("' + current_database_name + '")\n' +
+          'coll = db.collection("'+ current_collection_name + '")\n';
       },
 
-      query: function(params) {
-        var ret = "db.collection('" + current_collection_name + "').find(";
-
+      query: function (params) {
+        var ret = "coll.find(";
+          
         if(!$.isEmptyObject(params['query'])) {
-          ret += JSON.stringify(params['query']);
+          ret = formatRubyHash(ret, null, params['query']);
+          ret += ', {';
+        }
+        else {
+          ret += '{}, {';
         }
 
         if(!$.isEmptyObject(params['fields'])) {
+          ret += ':fields => ';
+          ret = formatRubyHash(ret, null, params['fields']);
           ret += ', ';
-          ret += JSON.stringify(params['fields']);
-          ret += ')';
-        }
-        else {
-          ret += ')';
         }
 
         if(!$.isEmptyObject(params['sort'])) {
-          ret += '.sort(';
-          ret += JSON.stringify(params['sort']);
-          ret += ')';
+          ret += ':sort => [';
+
+          $.each(params['sort'], function(key, value) {
+            if(params['sort'].hasOwnProperty(key)) {
+              var constant = (value == 1) ? 'Mongo::ASCENDING' : 'Mongo::DESCENDING';
+              ret += '["' + key + '", ' + constant + '], ';
+            }
+          });
+
+          ret = ret.substring(0, ret.length - 2) + '], ';
         }
 
-        if (isNumber(params['skip'])) {
-          ret += '.skip(' + params['skip'] + ')';
+        if (params['skip']) {
+          ret += ':skip => ' + params['skip'] + ', ';
         }
 
-        if (isNumber(params['limit'])) {
-          ret += '.limit(' + params['limit'] + ')';
+        if (params['limit']) {
+          ret += ':limit => ' + params['limit'] + '})';
+        }
+        else {
+          ret += ret.substring(0, ret.length - 2) + '})';
         }
 
         if (params['explain']) {
-          return '\t' + ret + '.explain(function(err, explanation) {\n\t\tmongoClient.close();\n\t});\n});';
+          return 'explanation = ' + ret + '.explain';
         }
         else {
-           return '\tvar cursor = ' + ret + ';\n\tmongoClient.close();\n});';
+          return 'cursor = ' + ret;
         }
       }
     },
@@ -304,11 +316,11 @@ $(function () {
           ret = ret.substring(0, ret.length - 2) + '])';
         }
 
-        if (isNumber(params['skip'])) {
+        if (params['skip']) {
           ret += '.skip(' + params['skip'] + ')';
         }
 
-        if (isNumber(params['limit'])) {
+        if (params['limit']) {
           ret += '.limit(' + params['limit'] + ')';
         }
 
@@ -320,64 +332,53 @@ $(function () {
         }
       }
     },
-
-    ruby: {
+    node: {
       import: function() {
-        return "require 'mongo'\ninclude Mongo\n";
+        return "var MongoClient = require('mongodb').MongoClient;\n" +
+                "var Server = require('mongodb').Server;\n";
       },
 
-      before: function () {
-        return 'mongo_client = MongoClient.new\n' +
-          'db = mongo_client.db("' + current_database_name + '")\n' +
-          'coll = db.collection("'+ current_collection_name + '")\n';
+      before: function() {
+        return "var mongoClient = new MongoClient(new Server('localhost', 27017));\n" +
+                "mongoClient.open(function(err, mongoClient) {\n" +
+                "\tvar db = mongoClient.db('" + current_database_name + "');\n";
       },
 
-      query: function (params) {
-        var ret = "coll.find(";
+      query: function(params) {
+        var ret = "db.collection('" + current_collection_name + "').find(";
 
         if(!$.isEmptyObject(params['query'])) {
-          ret = formatHash(ret, null, params['query']);
-          ret += ', {';
-        }
-        else {
-          ret += '{}, {';
+          ret += JSON.stringify(params['query']);
         }
 
         if(!$.isEmptyObject(params['fields'])) {
-          ret += ':fields => ';
-          ret = formatHash(ret, null, params['fields']);
           ret += ', ';
+          ret += JSON.stringify(params['fields']);
+          ret += ')';
+        }
+        else {
+          ret += ')';
         }
 
         if(!$.isEmptyObject(params['sort'])) {
-          ret += ':sort => [';
-
-          $.each(params['sort'], function(key, value) {
-            if(params['sort'].hasOwnProperty(key)) {
-              var constant = (value == 1) ? 'Mongo::ASCENDING' : 'Mongo::DESCENDING';
-              ret += '["' + key + '", ' + constant + '], ';
-            }
-          });
-
-          ret = ret.substring(0, ret.length - 2) + '], ';
+          ret += '.sort(';
+          ret += JSON.stringify(params['sort']);
+          ret += ')';
         }
 
-        if (isNumber(params['skip'])) {
-          ret += ':skip => ' + params['skip'] + ', ';
+        if (params['skip']) {
+          ret += '.skip(' + params['skip'] + ')';
         }
 
-        if (isNumber(params['limit'])) {
-          ret += ':limit => ' + params['limit'] + '})';
-        }
-        else {
-          ret += ret.substring(0, ret.length - 2) + '})';
+        if (params['limit']) {
+          ret += '.limit(' + params['limit'] + ')';
         }
 
         if (params['explain']) {
-          return 'explanation = ' + ret + '.explain';
+          return '\t' + ret + '.explain(function(err, explanation) {\n\t\tmongoClient.close();\n\t});\n});';
         }
         else {
-          return 'cursor = ' + ret;
+           return '\tvar cursor = ' + ret + ';\n\tmongoClient.close();\n});';
         }
       }
     }

@@ -1,3 +1,8 @@
 <% content_for :sidebar do %>
 <%= render :partial => "shared/database_sidebar" %>
 <% end %>
+
+<ul class="breadcrumb">
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li class="active"><%= link_to 'explorer', explorer_index_path %></li>
+</ul>

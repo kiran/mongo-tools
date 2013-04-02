@@ -2,6 +2,14 @@
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
 
+<ul class="breadcrumb">
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
+  <li><%= link_to(current_database_name, explorer_path(current_database_name))%> <span class="divider">/</span></li>
+  <li><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name)%> <span class="divider">/</span></li>
+  <li class="active"><%= current_document_id %></li>
+</ul>
+
 <% if @doc %>
 <div class="page-header">
   <h3 class="di"><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / <%= current_document_id %></h3>

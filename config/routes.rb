@@ -2,7 +2,7 @@ MongoTools::Application.routes.draw do
   
   resources :explorer, :only => [:index, :show] do
     scope :module => "explorer" do
-      resources :collections, :constraints => { :id => /.*/ } do
+      resources :collections, :except => [:new], :constraints => { :id => /.*/ } do
         resources :documents
       end
     end

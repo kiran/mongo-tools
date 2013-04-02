@@ -4,6 +4,12 @@
 
 <% if current_database.collection_names.include? current_collection_name %>
 <% unless request.xhr? %>
+<ul class="breadcrumb">
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
+  <li><%= link_to(current_database_name, explorer_path(current_database_name))%> <span class="divider">/</span></li>
+  <li class="active"><%= current_collection_name %></li>
+</ul>
 <div class="page-header">
   <h3 class="di"><%= current_collection_name %></h3>
   <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>
@@ -99,8 +105,7 @@ var current_database_name = '<%=j current_database_name %>',
   </tr>
   <% end %>
 </table>
-<%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), :method => :delete, class: "btn pull-right" unless request.xhr? %>
-
+    <%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), confirm: "Are you sure you want to delete the collection?", method: :delete, class: "btn btn-danger pull-right" %>
 </div>
 
 <% end %>
