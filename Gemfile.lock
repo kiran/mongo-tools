@@ -68,6 +68,8 @@ GEM
     eventmachine (1.0.3-java)
     execjs (1.4.0)
       multi_json (~> 1.0)
+    faraday (0.8.7)
+      multipart-post (~> 1.1)
     faye-websocket (0.4.7)
       eventmachine (>= 0.12.0)
     faye-websocket (0.4.7-java)
@@ -80,7 +82,6 @@ GEM
     formtastic-bootstrap (2.0.0)
       formtastic (~> 2.2)
       formtastic-bootstrap
-    growl (1.0.3)
     guard (1.7.0)
       formatador (>= 0.2.4)
       listen (>= 0.6.0)
@@ -106,6 +107,7 @@ GEM
     hike (1.2.1)
     http_parser.rb (0.5.3)
     http_parser.rb (0.5.3-java)
+    httpauth (0.2.0)
     i18n (0.6.1)
     interception (0.3)
     jasminerice (0.0.10)
@@ -117,6 +119,8 @@ GEM
       thor (>= 0.14, < 2.0)
     json (1.7.7)
     json (1.7.7-java)
+    jwt (0.1.8)
+      multi_json (>= 1.5)
     less (2.3.1)
       commonjs (~> 0.2.6)
     less-rails (2.3.2)
@@ -138,8 +142,17 @@ GEM
       activesupport (~> 3.0)
       plucky (~> 0.5.2)
     multi_json (1.7.2)
+    multi_xml (0.5.3)
+    multipart-post (1.2.0)
     nokogiri (1.5.9)
     nokogiri (1.5.9-java)
+    oauth2 (0.9.1)
+      faraday (~> 0.8)
+      httpauth (~> 0.1)
+      jwt (~> 0.1.4)
+      multi_json (~> 1.0)
+      multi_xml (~> 0.5)
+      rack (~> 1.2)
     plucky (0.5.2)
       mongo (~> 1.5)
     poltergeist (1.1.0)
@@ -274,6 +287,7 @@ DEPENDENCIES
   less-rails
   mongo (>= 1.8.3)
   mongo_mapper
+  oauth2
   poltergeist
   pry-nav
   pry-rescue
