@@ -27,50 +27,24 @@ class ServerStatusObject
 
   private
   def scrub!(hash)
-  # scrubs the keys of the hash to change offending "." and "$" characters
-  q = [hash]
-  while (!q.empty?)
-    curr = q.pop()
-    curr.keys.each do |key|
-      # replace key with newkey by adding newkey and deleting old key
-      newkey = key
-      if key.include? "." or key.include? "$"
-        newkey = newkey.gsub(".", ",")
-        newkey.gsub!("$", "#")
-        curr[newkey] = curr[key]
-        curr.delete(key)
+    # scrubs the keys of the hash to change offending "." and "$" characters
+    q = [hash]
+    while (!q.empty?)
+      curr = q.pop()
+      curr.keys.each do |key|
+        # replace key with newkey by adding newkey and deleting old key
+        newkey = key
+        if key.include? "." or key.include? "$"
+          newkey = newkey.gsub(".", ",")
+          newkey.gsub!("$", "#")
+          curr[newkey] = curr[key]
+          curr.delete(key)
+        end
+        q << curr[newkey] if curr[newkey].is_a?(Hash)
       end
-      q << curr[newkey] if curr[newkey].is_a?(Hash)
     end
+    hash
   end
-  hash
-end
-end
-
-class OpCounters
-    include MongoMapper::EmbeddedDocument
-    key :insert, Integer
-    key :query, Integer
-    key :update, Integer
-    key :delete, Integer
-    key :get_more, Integer
-    key :command, Integer
-    embedded_in :db_status_object
-end
-
-class Connections
-    include MongoMapper::EmbeddedDocument
-    key :current, Integer
-    key :available, Integer
-    embedded_in :db_status_object
-end
-
-class Cursors
-    include MongoMapper::EmbeddedDocument
-    key :total_open, Integer
-    key :client_cursors_size, Integer
-    key :timedOut, Integer
-    embedded_in :db_status_object
 end
 
 # format: 
