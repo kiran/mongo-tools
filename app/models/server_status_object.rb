@@ -1,5 +1,3 @@
-require 'stats_utils'
-
 class ServerStatusObject
   include MongoMapper::Document
   STATS_CONFIG = YAML.load_file("#{Rails.root}/config/stats.yml")[Rails.env]
@@ -7,7 +5,7 @@ class ServerStatusObject
   set_database_name STATS_CONFIG["stats_server_db_name"]
 
   key :host, String
-  key :timestamp, Date
+  key :timestamp, Time
 
   one :op_counters
   one :connections
@@ -25,6 +23,27 @@ class ServerStatusObject
 
     self.save
   end
+
+  private
+  def scrub!(hash)
+  # scrubs the keys of the hash to change offending "." and "$" characters
+  q = [hash]
+  while (!q.empty?)
+    curr = q.pop()
+    curr.keys.each do |key|
+      # replace key with newkey by adding newkey and deleting old key
+      newkey = key
+      if key.include? "." or key.include? "$"
+        newkey = newkey.gsub(".", ",")
+        newkey.gsub!("$", "#")
+        curr[newkey] = curr[key]
+        curr.delete(key)
+      end
+      q << curr[newkey] if curr[newkey].is_a?(Hash)
+    end
+  end
+  hash
+end
 end
 
 class OpCounters
