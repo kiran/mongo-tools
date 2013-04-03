@@ -1,8 +1,7 @@
 class ServerStatusObject
   include MongoMapper::Document
-  STATS_CONFIG = YAML.load_file("#{Rails.root}/config/stats.yml")[Rails.env]
-  connection(Mongo::Connection.new(STATS_CONFIG["stats_host"], STATS_CONFIG["stats_port"]))
-  set_database_name STATS_CONFIG["stats_server_db_name"]
+  connection(Mongo::Connection.new(Settings.stats.host, Settings.stats.port))
+  set_database_name Settings.stats.db
 
   key :host, String
   key :timestamp, Time
@@ -12,7 +11,9 @@ class ServerStatusObject
   one :cursors
 
   def initialize
-    stats = MongoMapper.database.command( { serverStatus: 1 } )
+    MongoMapper.connection ||= Mongo::Connection.new(Settings.mongo.host, Settings.mongo.port)
+    db = MongoMapper.connection[MongoMapper.connection.database_names[0]]
+    stats = db.command( { serverStatus: 1 } )
     scrub!(stats)
     
     self.timestamp = stats["localTime"]
