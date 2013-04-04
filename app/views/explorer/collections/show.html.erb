@@ -4,12 +4,7 @@
 
 <% if current_database.collection_names.include? current_collection_name %>
 <% unless request.xhr? %>
-<ul class="breadcrumb">
-  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
-  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
-  <li><%= link_to(current_database_name, explorer_path(current_database_name))%> <span class="divider">/</span></li>
-  <li class="active"><%= current_collection_name %></li>
-</ul>
+<%= render :partial => "shared/collections_breadcrumbs" %>
 <div class="page-header">
   <h3 class="di"><%= current_collection_name %></h3>
   <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>

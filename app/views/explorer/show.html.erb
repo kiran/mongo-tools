@@ -2,11 +2,7 @@
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
 
-<ul class="breadcrumb">
-  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
-  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
-  <li class="active"><%= link_to(current_database_name, explorer_path(current_database_name)) %></li>
-</ul>
+<%= render :partial => "shared/collections_breadcrumbs" %>
 
 <small><%= link_to "New Collection", "#", id: 'create-coll', class: "btn pull-right" if can_edit? %></small>
 <div id="create-modal" class="modal hide fade">

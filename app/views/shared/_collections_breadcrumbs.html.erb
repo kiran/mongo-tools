@@ -1,0 +1,23 @@
+<ul class="breadcrumb">
+<% if current_document %>
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
+  <li><%= link_to current_database_name, explorer_path(current_database_name)%> <span class="divider">/</span></li>
+  <li><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name)%> <span class="divider">/</span></li>
+  <li class="active"><%= current_document_id %></li>
+<% elsif current_collection %>
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
+  <li><%= link_to current_database_name, explorer_path(current_database_name) %> <span class="divider">/</span></li>
+  <li class="active"><%= current_collection_name %></li>
+<% elsif current_database %>
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li><%= link_to 'explorer', explorer_index_path %> <span class="divider">/</span></li>
+  <li class="active"><%= current_database_name %></li>
+<% elsif explorer_index_path == request.env['PATH_INFO'] %>
+  <li><%= link_to 'mongotools', root_path %> <span class="divider">/</span></li>
+  <li class="active">explorer</li>
+<% else %>
+  <li class="active">mongotools</li>
+<% end %>
+</ul>
