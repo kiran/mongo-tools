@@ -4,66 +4,82 @@
 
 <% if current_database.collection_names.include? current_collection_name %>
 <% unless request.xhr? %>
+<%= render :partial => "shared/collections_breadcrumbs" %>
 <div class="page-header">
   <h3 class="di"><%= current_collection_name %></h3>
   <small><%= link_to "New Document", new_explorer_collection_document_path(current_database_name, current_collection_name), class: "btn pull-right" if can_edit? %></small>
 </div>
 
-<div class="tabbable"> <!-- Only required for left/right tabs -->
-  <ul class="nav nav-tabs">
-    <li class="active"><a href="#tab1" data-toggle="tab">Query</a></li>
-    <li><a href="#tab2" data-toggle="tab">Ruby</a></li>
-    <li><a href="#tab2" data-toggle="tab">Python</a></li>
-  </ul>
-  <div class="tab-content">
-    <div class="tab-pane active" id="tab1">
-      <div class="collection-query">
-          <form id="collection-form" name="query">
-              <div class="interface">
-                <div class="params">
-                  db.<%= current_collection_name %>.find(<span id="span-query" style>
-                  {
-                  <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
-                  }
-                  </span><span id="span-fields" style="display: none;">
-                  , {
-                  <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
-                  }
-                  </span>)<span id="span-sort" style="display: none;">
-                  .sort({
-                  <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
-                  })
-                  </span><span id="span-skip" style="display: none;">
-                  .skip(
-                  <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
-                  )
-                  </span><span id="span-limit">
-                  .limit(
-                  <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">25&#8203;</span>
-                  )
-                  </span><span id="span-explain" style="display: none;">
-                  .explain()
-                  </span>
-                </div>
-              <div class="buttons">
-                <button id="fields" class="btn btn-inverse" data-field="fields">fields{}</button>
-                <button id="sort" class="btn btn-inverse" data-field="sort">sort()</button>
-                <button id="skip" class="btn btn-inverse" data-field="skip">skip()</button>
-                <button id="explain" class="btn btn-inverse" data-field="explain">explain()</button>
-                <button id="submit" class="btn pull-right" type="submit">Query</button>
-              </div>
-            </div>
-          </form>
-        </div>
+<div class="collection-query">
+  <form id="collection-form" name="query">
+      <div class="interface">
+        <div class="params">
+          db.<%= current_collection_name %>.find(<span id="span-query" style>
+          {
+          <span id="query-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="query">&#8203;</span>
+          }
+          </span><span id="span-fields" style="display: none;">
+          , {
+          <span id="fields-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="fields">&#8203;</span>
+          }
+          </span>)<span id="span-sort" style="display: none;">
+          .sort({
+          <span id="sort-input" spellcheck="false" contenteditable="true" data-type="hash" data-name="sort">&#8203;</span>
+          })
+          </span><span id="span-skip" style="display: none;">
+          .skip(
+          <span id="skip-input" spellcheck="false" contenteditable="true" data-type="number" data-name="skip">&#8203;</span>
+          )
+          </span><span id="span-limit">
+          .limit(
+          <span id="limit-input" spellcheck="false" contenteditable="true" data-type="number" data-name="limit">25&#8203;</span>
+          )
+          </span><span id="span-explain" style="display: none;">
+          .explain()
+          </span>
+      </div>
+      <div class="buttons">
+        <button id="fields" class="btn btn-inverse" data-field="fields">fields{}</button>
+        <button id="sort" class="btn btn-inverse" data-field="sort">sort()</button>
+        <button id="skip" class="btn btn-inverse" data-field="skip">skip()</button>
+        <button id="explain" class="btn btn-inverse" data-field="explain">explain()</button>
+        <div class="btn-group">
+          <a id="languages" class="btn dropdown-toggle btn-inverse" data-toggle="dropdown" href="#">
+          Language
+          <span class="caret"></span>
+        </a>
+        <ul id="languages-dropdown" class="dropdown-menu">
+          <li id="0"><a href="#">Show me in...</a></li>
+          <li class="divider"></li>
+          <li id="ruby"><a href="#">Ruby</a></li>
+          <li id="python"><a href="#">Python</a></li>
+          <li id="node"><a href="#">Node.JS</a></li>
+        </ul>
+      </div>
+        <button id="submit" class="btn pull-right" type="submit">Query</button>
+      </div>
     </div>
-    <div class="tab-pane" id="tab2">
-      <p>Eventually have Ruby syntax for the query.</p>
-    </div>
-    <div class="tab-pane" id="tab3">
-      <p>Eventually have Python syntax for the query.</p>
-    </div>
+  </form>
+</div>
+
+<div id="languages-modal" class="modal hide fade">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    <h3 id="modal-language">Show me in...</h3>
+  </div>
+  <div class="modal-body">
+    <textarea id="query"></textarea>
+  </div>
+  <div class="modal-footer">
+    <button id="close" class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
   </div>
 </div>
+
+<%= javascript_tag do %>
+var current_database_name = '<%=j current_database_name %>',
+    current_collection_name = '<%=j current_collection_name %>';
+<% end %>
+
 <% end %>
 
 <% if @explain %>
@@ -84,8 +100,7 @@
   </tr>
   <% end %>
 </table>
-<%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), :method => :delete, class: "btn pull-right" unless request.xhr? %>
-
+    <%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), confirm: "Are you sure you want to delete the collection?", method: :delete, class: "btn btn-danger pull-right" %>
 </div>
 
 <% end %>

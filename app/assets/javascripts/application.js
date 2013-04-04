@@ -16,6 +16,8 @@
 //= require paper
 //= require codemirror
 //= require codemirror/modes/javascript
+//= require codemirror/modes/ruby
+//= require codemirror/modes/python
 //= require codemirror/utils/formatting
 //= require codemirror/utils/javascript-hint
 //= require codemirror/utils/matchbrackets

@@ -2,6 +2,8 @@
 <%= render :partial => "shared/collections_sidebar" %>
 <% end %>
 
+<%= render :partial => "shared/collections_breadcrumbs" %>
+
 <% if @doc %>
 <div class="page-header">
   <h3 class="di"><%= link_to current_collection_name, explorer_collection_path(current_database_name, current_collection_name) %> / <%= current_document_id %></h3>

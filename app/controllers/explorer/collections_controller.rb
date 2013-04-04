@@ -12,7 +12,6 @@ class Explorer::CollectionsController < ExplorerController
      redirect_to explorer_collection_path(current_database_name, params[:coll] )
     rescue Exception => ex
      flash[:error] = ex.message
-     render :action => :new
     end
   end
 
