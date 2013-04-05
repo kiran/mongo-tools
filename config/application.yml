@@ -2,6 +2,14 @@ defaults: &defaults
   mongo: &mongo_defaults
     host: 127.0.0.1
     port: 27017
+  stats: &stats_defaults
+    host: 127.0.0.1
+    port: 27017
+    db: stats
+    frequency: 20s
+    path: "~/mongo"
+    logpath: "~/mongo/logs"
+    size: 52428800 # 50 MB collections
 
 development:
   <<: *defaults
@@ -11,6 +19,9 @@ test:
   mongo:
     <<: *mongo_defaults
     database: mongo_tools_test
+  stats:
+    <<: *stats_defaults
+    stats_port: 27017
 
 production:
   <<: *defaults
