@@ -100,7 +100,7 @@ var current_database_name = '<%=j current_database_name %>',
   </tr>
   <% end %>
 </table>
-    <%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), confirm: "Are you sure you want to delete the collection?", method: :delete, class: "btn btn-danger pull-right" %>
+    <%= link_to "Delete Collection", explorer_collection_path(current_database_name, current_collection_name), confirm: "Are you sure you want to delete the collection?", method: :delete, class: "btn btn-danger pull-right" unless request.xhr? %>
 </div>
 
 <% end %>
