@@ -16,8 +16,9 @@ MongoTools::Application.routes.draw do
   resources :query_analyzer, :only => [:index]
   root :to => redirect("/explorer")
 
+  resource :server_status, :only => [:index, :show]
+
   resources :databases, :only => [:index, :show] do
-    resource :opcounts, :only => [:index, :show]
     resource :sharding_stats, :only => [:index, :show]
   end
 
