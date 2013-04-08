@@ -4,8 +4,8 @@ defaults: &defaults
     port: 27017
   stats: &stats_defaults
     host: 127.0.0.1
-    port: 27017
-    db: stats
+    port: 27018
+    database: stats
     frequency: 20s
     path: "~/mongo"
     logpath: "~/mongo/logs"
@@ -21,7 +21,7 @@ test:
     database: mongo_tools_test
   stats:
     <<: *stats_defaults
-    stats_port: 27017
+    port: 27017
 
 production:
   <<: *defaults
