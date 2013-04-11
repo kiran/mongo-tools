@@ -28,6 +28,8 @@ end
 group :development do
   gem 'guard-rails'
   gem 'guard-rspec'
+  gem 'jasminerice'
+  gem 'guard-jasmine'
   gem 'guard-spork'
 
   # requries 'growlnotify' available here: http://growl.info/downloads
@@ -45,6 +47,7 @@ end
 group :test do
   gem 'coveralls', require: false
 
+  gem 'jasminerice'
   gem 'poltergeist'
   gem 'rspec-rails'
   gem 'spork'
