@@ -470,10 +470,6 @@ describe Evaluator do
       query = {}
       result =  evaluator.evaluate_query(query)
       expect(result[:index]).to eq([])
-
-      query = {"location" => { "$near" => [100,100] }}
-      result =  evaluator.evaluate_query(query)
-      expect(result[:index]).to eq([])
     end
 
     it "Recommends index which is better than existing one(coverage == none)." do
@@ -569,13 +565,6 @@ describe Evaluator do
       expect(result[:index]).to eq([])
     end
 
-    it "Recommends no index when geospatial indexes are encountered" do
-      query = { "location" => [-100, 100] }
-      result =  evaluator.evaluate_query(
-        query, :namespace => test_coll_namespace)
-      expect(result[:index]).to eq([])
-    end
-
     it "When evaluating existing indexes, does not require " +
        "'equal and 'sort' fields to be disjoint." do
       query = { "artist" => "Sting", "rating" => 7, "duration" => 60}
@@ -609,5 +598,217 @@ describe Evaluator do
     end
 
   end # context
+
+  context "When asked to suggest an index (2dsphere):" do
+    it "Suggests an index with optimal order of fields" do
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+            }
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 },
+        "weight" => 130,
+        "depth" => { "$gt" => 10 },
+      }
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to \
+        eq("{ 'color': 1, 'weight': 1, 'location': '2dsphere', 'height': 1, 'depth': 1 }")
+    end
+
+    it "Disregards unsupported fields" do
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+            }
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 },
+        "weight" => 130,
+        "name" => { "$regex" => "^acme.*corp", "$options" => "i"}, #unsupported
+      }
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to \
+        eq("{ 'color': 1, 'weight': 1, 'location': '2dsphere', 'height': 1 }")
+    end
+
+    it "Does not suggest an index when there is one that can be used (superset)" do
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+            }
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 }
+      }
+
+      test_coll.ensure_index([
+        ["color", Mongo::ASCENDING],
+        ["location", Mongo::GEO2DSPHERE],
+        ["height", Mongo::DESCENDING],
+        ["length", Mongo::ASCENDING],
+      ])
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+      expect(result[:index]).to eq([])
+    end
+
+    it "Does not suggest an index when there is an ideal index" do
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+            }
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 }
+      }
+
+      test_coll.ensure_index([
+        ["color", Mongo::ASCENDING],
+        ["location", Mongo::GEO2DSPHERE],
+        ["height", Mongo::DESCENDING],
+      ])
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+      expect(result[:index]).to eq([])
+    end
+
+    it "Does not suggest an index for queries using aggregation operators" do
+      q1 = {
+        "location" => {
+          "$geoWithin" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+            }
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 }
+      }
+      q2 = {
+        "location" => {
+          "$geoIntersects" => {
+            "$geometry" => {
+              "type" => "Polygon",
+              "coordinates" => [ [ [-10,10], [ 200, 33], [-4, 44], [-10,10]]]
+            }
+          }
+        },
+        "height" => { "$gt" => 280 }
+      }
+
+      ['$or', '$and', '$nor'].each do |op|
+        query = {
+          op => [q1, q2]
+        }
+        result = evaluator.evaluate_query(
+          query, :namespace => test_coll_namespace)
+        expect(result[:index]).to eq([])
+      end
+    end
+
+    it "Properly recognizes all supported operators" do
+      # geoWithin + geometry
+      queries = [
+        {
+          "location" => {
+            "$geoWithin" => {
+              "$geometry" => {
+                "type" => "Polygon",
+                "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+              }
+            }
+          }
+        },
+        # geoWithin + centerSphere
+        q1 = {
+          "location" => {
+            "$geoWithin" => {
+              "$geometry" => {
+                "type" => "Polygon",
+                "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
+              }
+            }
+          }
+        },
+        # geoIntersects
+        {
+          "location" => {
+            "$geoIntersects" => {
+              "$geometry" => {
+                "type" => "Polygon",
+                "coordinates" => [ [ [-10,10], [ 200, 33], [-4, 44], [-10,10]]]
+              }
+            }
+          }
+        },
+        # near + geometry
+        {
+          "location" => {
+            "$near" => {
+              "$geometry" => { "type" => "Point", "coordinates" => [0,0] }
+            }
+          }
+        },
+        # nearSphere + geometry
+        {
+          "location" => {
+            "$nearSphere" => {
+              "$geometry" => { "type" => "Point", "coordinates" => [0,0] },
+              "$maxDistance" => 30,
+            }
+          }
+        },
+      ]
+      queries.each do |query|
+        result = evaluator.evaluate_query(
+          query, :namespace => test_coll_namespace)
+        expect(result[:index].length).to eq(1)
+        expect(result[:index][0].raw_index).to eq("{ 'location': '2dsphere' }")
+      end
+    end
+
+    it "Suggests a geospatial index even if there is a non-geospatial index" do
+      query = {
+        "location" => {
+          "$near" => {
+            "$geometry" => { "type" => "Point", "coordinates" => [0,0] }
+          }
+        }
+      }
+
+      test_coll.ensure_index([
+        ["location", Mongo::ASCENDING],
+      ])
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to eq("{ 'location': '2dsphere' }")
+    end
+
+  end #context
 
 end
