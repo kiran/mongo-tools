@@ -70,9 +70,8 @@ end
 
 
 class Evaluator
-  def initialize(addr, port)
-    @addr = addr
-    @port = port
+  def initialize(client)
+    @client = client
   end
 
   # Evaluates the whole query.
@@ -108,8 +107,7 @@ class Evaluator
   private
 
   def get_db(dbname)
-    cl = Mongo::MongoClient.new @addr, @port
-    cl.db(dbname)
+    @client.db(dbname)
   end
 
   def get_coll(namespace)

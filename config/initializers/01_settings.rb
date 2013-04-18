@@ -11,7 +11,7 @@ end
 class DotHash < Hash
   def initialize(h)
     h.each do |k, v|
-      self[k] = v.is_a?(Hash) ? DotHash.new(v) : v
+      self[k.to_s] = v.is_a?(Hash) ? DotHash.new(v) : v
     end
   end
 
@@ -21,7 +21,3 @@ class DotHash < Hash
 end
 
 Settings = DotHash.new(config[Rails.env])
-
-# Setup MongoMapper manually because we have our own config
-# MongoMapper expects a hash with env => settings hash
-MongoMapper.setup({ Rails.env => Settings.mongo }, Rails.env, :logger => Rails.logger)
