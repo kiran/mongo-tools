@@ -9,6 +9,7 @@ MongoTools::Application.routes.draw do
   end
 
   get "/monitoring" => "monitoring#index"
+  get "/monitoring/opcounts" => "monitoring#op_counts"
 
   get "/sharding" => "sharding#index"
 
