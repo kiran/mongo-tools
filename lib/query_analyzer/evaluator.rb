@@ -47,7 +47,13 @@ class IndexResult < EvaluationResult
   # "{ 'price': 1, 'rating': 1, 'duration': 1 }"
   def raw_index
     elems = @index.map do |field, type|
-      type_str = type == Mongo::ASCENDING ? "1" : "-1"
+      type_str = case type
+                 when Mongo::ASCENDING then "1"
+                 when Mongo::DESCENDING then "-1"
+                 when Mongo::GEO2DSPHERE then "'2dsphere'"
+                 when Mongo::GEO2D then "'2d'"
+                 else "?"
+                 end
       "'#{field}': #{type_str}"
     end
 
@@ -67,25 +73,6 @@ class Evaluator
   def initialize(addr, port)
     @addr = addr
     @port = port
-  end
-
-  def get_db(dbname)
-    cl = Mongo::MongoClient.new @addr, @port
-    cl.db(dbname)
-  end
-
-  def get_coll(namespace)
-    db_name, collection_name = namespace.split(".",2)
-    db = get_db(db_name)
-    coll = db[collection_name]
-  end
-
-  def get_index_information(namespace)
-    if namespace.nil?
-      return {}
-    else
-      return get_coll(namespace).index_information
-    end
   end
 
   # Evaluates the whole query.
@@ -119,6 +106,25 @@ class Evaluator
   end
 
   private
+
+  def get_db(dbname)
+    cl = Mongo::MongoClient.new @addr, @port
+    cl.db(dbname)
+  end
+
+  def get_coll(namespace)
+    db_name, collection_name = namespace.split(".",2)
+    db = get_db(db_name)
+    coll = db[collection_name]
+  end
+
+  def get_index_information(namespace)
+    if namespace.nil?
+      return {}
+    else
+      return get_coll(namespace).index_information
+    end
+  end
 
   # The operator handlers follow.
   # Every handler returns an array of EfficiencyResult objects
@@ -265,18 +271,83 @@ class Evaluator
   # ====================Indexes suggestion======================
 
   RANGE_OPERATORS = %w{ $all $not $in $ne $nin $lt $lte $gt $gte }
+  GEOSPATIAL_OPERATORS = %w{ $within $geoWithin $geoIntersects $near $nearSphere }
+  AGGREGATION_OPERATORS = %w{ $or $nor $and }
+
+  # Given the list of operators, recursively traverse the query
+  # and find all occurences of the operators. Return an array of pairs
+  # [ [operator, value], ... ]
+  def extract_operators_(query_hash, operators)
+    res = []
+    traverse_query query_hash do |type, key, val|
+      case type
+      when :multiple_queries_operator
+        res += [key, val] if operators.include? key
+        val.each { |sub| res += extract_operators_(sub, operators) }
+      when :field_query
+        val.each { |op, op_val| res << [op, op_val] if operators.include? op }
+      end
+    end
+    res
+  end
+
+  # Depending on the query operators and structure this function
+  # returns what type of index would be suitable for the query.
+  # Returns one of these values: :regular, :geo2d, :geo2dsphere
+  def potential_index_type(query_hash)
+
+    # $geoIntersects is only handled by 2dsphere index
+    ops = extract_operators_(query_hash, ['$geoIntersects'])
+    if !ops.empty?
+      return :geo2dsphere
+    end
+
+    # Queries that have one of these operators are intended for 2dsphere indexes
+    # if teere is '$geometry' field in the operator's options. Otherwise
+    # they are suitable for 2d index.
+    ops = extract_operators_(query_hash, ['$near', '$nearSphere'])
+    ops.each do |operator, value|
+      if (value.is_a? Hash) && (value.has_key? '$geometry')
+        return :geo2dsphere
+      else
+        return :geo2d
+      end
+    end
+
+    ops = extract_operators_(query_hash, ['$within', '$geoWithin'])
+    ops.each do |operator, value|
+      if (value.is_a? Hash) && (value.has_key?('$geometry') || value.has_key?('$centerSphere'))
+        return :geo2dsphere
+      else
+        return :geo2d
+      end
+    end
+
+    return :regular
+  end
+
+  def check_for_indexes(query_hash, sort_hash, namespace)
+    method = case potential_index_type(query_hash)
+             when :geo2dsphere then :check_for_2dsphere_indexes
+             when :geo2d then :check_for_2d_indexes
+             when :regular then :check_for_regular_indexes
+             end
+    send(method, query_hash, sort_hash, namespace)
+  end
 
   # Classify fields into four types and return a mapping from type symbols
   # to arrays of fields. The types are:
   # :equal_type - e.g. "A" => "10"
   # :sort_type - fields that are present in the sort_hash
   # :range_type - fieds that are used with an operator from RANGE_OPERATORS
+  # :geospatial_type - fields for which geospatial operators are used
   # :unsupported_type - e.g. {"A" => { "$regex" => "acme.*corp.*$" }
   def classify_fields(query_hash, sort_hash)
     classified_fields = {
       :equal_type => [],
       :sort_type => [],
       :range_type  => [],
+      :geospatial_type => [],
       :unsupported_type => [],
     }
     _classify_field!(query_hash, classified_fields)
@@ -294,12 +365,10 @@ class Evaluator
         val.each { |sub| _classify_field!(sub, classified_fields) } if (key =="$and")
       when :field_query
         #e.g. "A" => {"$gt" : 13, "$lt" : 27}
-        support = true
-        val.each do |op, _|
-          support = false unless RANGE_OPERATORS.include? op
-        end
-        if support
+        if (val.keys - RANGE_OPERATORS).empty?
           classified_fields[:range_type] << key
+        elsif (val.keys - GEOSPATIAL_OPERATORS).empty?
+          classified_fields[:geospatial_type] << key
         else
           classified_fields[:unsupported_type] << key
         end
@@ -310,21 +379,99 @@ class Evaluator
     end
   end
 
-  def check_for_indexes(query_hash, sort_hash, namespace)
+  def check_for_2d_indexes(query_hash, sort_hash, namespace)
+    #TODO
+    []
+  end
+
+  def check_for_2dsphere_indexes(query_hash, sort_hash, namespace)
+    # 2dsphere indexes don't enhance queries that use aggregation operators
+    if !(query_hash.keys & AGGREGATION_OPERATORS).empty?
+      return []
+    end
+
+    classified_fields = classify_fields(query_hash, sort_hash)
+
+    return [] if has_ideal_2dsphere_index?(classified_fields, namespace)
+
+    # we are going to construct an 'ideal' index
+    index = {}
+
+    [:equal_type, :geospatial_type, :range_type].each do |f_type|
+      classified_fields[f_type].each do |field|
+        if !index.keys.include?(field)
+          index[field] = case f_type
+                         when :geospatial_type then Mongo::GEO2DSPHERE
+                         else Mongo::ASCENDING
+                         end
+        end
+      end
+    end
+
+    return [] if index.empty?
+
+    quality = :good
+    if (!classified_fields[:unsupported_type].empty?) || \
+       (!classified_fields[:sort_type].empty?)
+      quality = :optional
+    end
+
+    [IndexResult.new(index.to_a, quality)]
+  end
+
+  def has_ideal_2dsphere_index?(classified_fields, namespace)
+    indexes = get_index_information(namespace)
+    indexes.each do |_, index|
+      return true if is_2dsphere_index_ideal?(classified_fields, index["key"])
+    end
+    false
+  end
+
+  def is_2dsphere_index_ideal?(classified_fields, index)
+    return false if index.values.include?("2d")
+
+    eq_fields = classified_fields[:equal_type].uniq
+    range_fields = classified_fields[:range_type].uniq
+    geo_fields = classified_fields[:geospatial_type].uniq
+    all_fields = eq_fields | geo_fields | range_fields
+
+    # we are interested in the maximal prefix of the index that
+    # contains only fields from the query
+    index = index.take_while{|k,v| all_fields.include? k}
+    index = Hash[*index.flatten]
+
+    # eq_fields should be contained in a contiguous prefix of the index
+    prefix = index.keys.take_while{|k| eq_fields.include? k}
+    remaining = index.keys.drop(prefix.length)
+    if prefix.sort != eq_fields.sort
+      return false
+    end
+
+    # all 'geospatial' fields should have '2dsphere' type within the index
+    classified_fields[:geospatial_type].each do |field|
+      return false if index[field] != '2dsphere'
+    end
+
+    # the set of remaining fields should be equal to the set of fields
+    # contained in geo_fields and all_fields
+    (geo_fields | range_fields).uniq.sort == remaining.uniq.sort
+  end
+
+  def check_for_regular_indexes(query_hash, sort_hash, namespace)
     # When using indexes with $or queries each clause of an $or query will execute in parallel
     # So find indexes for each clause rather than a compound indexes for whole query.
     # Note: when using the $or operator with the sort() method in a query,
     # the query will not use the indexes on the $or fields.
     # (http://docs.mongodb.org/manual/reference/operator/or/#_S_or)
     result = []
-    if (!query_hash.empty? && query_hash.keys.first == "$or" && sort_hash.empty?)
+    if (query_hash.keys.include?("$or") && sort_hash.empty?)
       query_hash["$or"].each {|clause| result += check_for_indexes(clause, sort_hash, namespace)}
       return result
     end
 
     classified_fields = classify_fields(query_hash, sort_hash)
 
-    if has_ideal_index?(classified_fields, sort_hash, namespace)
+    if has_ideal_regular_index?(classified_fields, sort_hash, namespace)
       return []
     end
 
@@ -382,7 +529,7 @@ class Evaluator
     index = index.take_while{|k,v| all_fields.include? k}
     index = Hash[*index.flatten]
 
-    if index.values.include?("2d")
+    if index.values.include?("2d") || index.values.include?("2dsphere")
       return {:geospatial => true, :coverage => nil, :ideal_order => nil}
     end
 
@@ -400,7 +547,7 @@ class Evaluator
     ideal_order = true
 
     # eq_fields should be contained in a contiguous prefix of the index
-    prefix = index.keys.take_while{|k,v| eq_fields.include? k}
+    prefix = index.keys.take_while{|k| eq_fields.include? k}
     if prefix.sort != eq_fields.sort
       ideal_order = false
     end
@@ -423,23 +570,11 @@ class Evaluator
   end
 
   # This method returns true if it is able to detect that there is an ideal
-  # index for the given query (full coverage, ideal order). If there is a
-  # geospatial index for that query, it is also considered to be optimal.
-  # Note that false may also be returned when get_index_information is not
-  # succesful.
-  def has_ideal_index?(classified_fields, sort_hash, namespace)
+  # index for the given query (full coverage, ideal order).
+  def has_ideal_regular_index?(classified_fields, sort_hash, namespace)
     indexes = get_index_information(namespace)
-    if indexes.nil?
-      return false
-    end
     indexes.each do |_, index|
       report = generate_index_report(index["key"], classified_fields, sort_hash)
-
-      # TODO - maybe we can evaluate geospatial indexes instead assuming that
-      # they are optimal?
-      if report[:geospatial] == true
-        return true
-      end
 
       if (report[:coverage] == :full) && (report[:ideal_order] == true)
         return true
@@ -481,17 +616,13 @@ class Evaluator
     "$where" => :handle_where,
 
     # geospatial
-    #
-    # All the geospatial queries operate on a geospatial index, so they
-    # should be efficient.
-    "$box" => :empty_handle,
-    "$near" => :empty_handle,
+    "$geoWithin" => :empty_handle,
     "$within" => :empty_handle,
     "$nearSphere" => :empty_handle,
-    "$centerSphere" => :empty_handle,
-    "$center" => :empty_handle,
+    "$near" => :empty_handle,
     "$maxDistance" => :empty_handle,
-    "$polygon" => :empty_handle,
+    "$centerSphere" => :empty_handle,
+    "$geoIntersects" => :empty_handle,
     "$uniqueDocs" => :empty_handle,
 
     # array
@@ -584,7 +715,7 @@ class Evaluator
       end
       result += handle_single_field field, operator_hash
     end
-    result 
+    result
   end
 
 end #class Evaluator
