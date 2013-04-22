@@ -5,7 +5,7 @@ defaults: &defaults
   stats: &stats_defaults
     host: 127.0.0.1
     port: 27018
-    db: stats
+    database: stats
     frequency: 20s
     path: "~/mongo"
     logpath: "~/mongo/logs"

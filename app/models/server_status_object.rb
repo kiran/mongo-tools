@@ -1,6 +1,6 @@
 class ServerStatusObject
   include MongoMapper::Document
-  connection(Mongo::Connection.new(Settings.stats.host, Settings.stats.port))
+  connection(MongoConnections.stats)
   set_database_name Settings.stats.db
 
   key :host, String
@@ -11,7 +11,6 @@ class ServerStatusObject
   one :cursors
 
   def initialize
-    MongoMapper.connection ||= Mongo::Connection.new(Settings.mongo.host, Settings.mongo.port)
     db = MongoMapper.connection[MongoMapper.connection.database_names[0]]
     stats = db.command( { serverStatus: 1 } )
     scrub!(stats)

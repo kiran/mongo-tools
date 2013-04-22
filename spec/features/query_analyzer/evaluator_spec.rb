@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Evaluator do
   let(:evaluator) {
-    Evaluator.new Settings.mongo.host, Settings.mongo.port
+    Evaluator.new MongoConnections.global
   }
 
   let(:test_coll_name) {

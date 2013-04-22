@@ -23,9 +23,7 @@ feature "query", :focus => true, :js => true do
 
   #clean up database
   after :each do
-    MongoMapper.database.collections.each do |coll|
-      coll.remove
-    end
+    MongoMapper.connection.drop_database(Settings.mongo.database)
   end
 
   def wait_for_ajax(timeout = Capybara.default_wait_time)

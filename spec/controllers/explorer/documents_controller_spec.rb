@@ -20,9 +20,7 @@ describe Explorer::DocumentsController do
   end
 
   after(:each) do
-    MongoMapper.database.collections.each do |coll|
-      coll.remove
-    end
+    MongoMapper.connection.drop_database(Settings.mongo.database)
   end
 
   describe "Showing a Document" do

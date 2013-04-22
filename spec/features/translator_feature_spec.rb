@@ -21,9 +21,7 @@ feature "translator", :focus => true, :js => true do
 
   #clean up database
   after :each do
-    MongoMapper.database.collections.each do |coll|
-      coll.remove
-    end
+    MongoMapper.connection.drop_database(Settings.mongo.database)
   end
 
   def translate (input, language, opts = {})
