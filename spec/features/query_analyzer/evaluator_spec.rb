@@ -94,7 +94,6 @@ describe Evaluator do
       })
       c += 1
     end
-    test_coll.insert({ "location" => { "x" => -10, "y" => 10 } })
 
     # create indexes
     test_coll.ensure_index([
@@ -106,7 +105,6 @@ describe Evaluator do
       ["rating", Mongo::ASCENDING],
       ["price", Mongo::ASCENDING]
     ])
-    test_coll.create_index([["location", Mongo::GEO2D]])
   end
 
   # clean up collection and indexes
@@ -730,7 +728,7 @@ describe Evaluator do
       end
     end
 
-    it "Properly recognizes all supported operators" do
+    it "Properly recognizes all supported '2dsphere' operators" do
       # geoWithin + geometry
       queries = [
         {
@@ -744,13 +742,10 @@ describe Evaluator do
           }
         },
         # geoWithin + centerSphere
-        q1 = {
+        {
           "location" => {
             "$geoWithin" => {
-              "$geometry" => {
-                "type" => "Polygon",
-                "coordinates" => [ [ [0,0], [ 120, -30], [-4, 44], [0,0]]]
-              }
+              "$centerSphere" => [[0,0], 20]
             }
           }
         },
@@ -807,6 +802,95 @@ describe Evaluator do
       result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
       expect(result[:index].length).to eq(1)
       expect(result[:index][0].raw_index).to eq("{ 'location': '2dsphere' }")
+    end
+
+  end #context
+
+  context "When asked to suggest an index (2d):" do
+
+    it "Suggests a non-compound index." do
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$box" => [[0,0],[10,20]]
+          }
+        },
+        "color" => "pink",
+        "height" => { "$lt" => 280 },
+        "weight" => 130,
+        "depth" => { "$gt" => 10 },
+      }
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+
+      expect(result[:index].length).to eq(1)
+      expect(result[:index][0].raw_index).to \
+        eq("{ 'location': '2d' }")
+    end
+
+    it "Gives no suggestions if there is a suitable index." do
+      test_coll.create_index([["second_location", Mongo::GEO2D]])
+
+      query = {
+        "location" => {
+          "$geoWithin" => {
+            "$box" => [[0,0],[10,20]]
+          }
+        },
+        "second_location" => {
+          "$geoWithin" => {
+            "$polygon" => [[0, 0], [3, 6], [6, 0]]
+          }
+        },
+      }
+
+      result = evaluator.evaluate_query(query, :namespace => test_coll_namespace)
+
+      expect(result[:index].length).to eq(0)
+    end
+
+    it "Properly recognizes all supported '2d' operators" do
+      # geoWithin + box
+      queries = [
+        {
+          "location" => {
+            "$geoWithin" => {
+              "$box" => [[0,0],[10,20]]
+            }
+          }
+        },
+        # geoWithin + polygon
+        {
+          "location" => {
+            "$geoWithin" => {
+              "$polygon" => [[0, 0], [3, 6], [6, 0]]
+            }
+          }
+        },
+        # geoWithin + center
+        {
+          "location" => {
+            "$geoWithin" => {
+              "$center" => [[0, 9], 13.2]
+            }
+          }
+        },
+        # near
+        {
+          "location" => {
+            "$geoWithin" => {
+              "$near" => [[0, 9]]
+            }
+          }
+        },
+      ]
+
+      queries.each do |query|
+        result = evaluator.evaluate_query(
+          query, :namespace => test_coll_namespace)
+        expect(result[:index].length).to eq(1)
+        expect(result[:index][0].raw_index).to eq("{ 'location': '2d' }")
+      end
     end
 
   end #context
