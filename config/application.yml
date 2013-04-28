@@ -10,6 +10,9 @@ defaults: &defaults
     path: "~/mongo"
     logpath: "~/mongo/logs"
     size: 52428800 # 50 MB collections
+  airbrake:
+    api_key: "fe86f93cb8aadac145b4fc0bc8307515"
+    log_development: false
 
 development:
   <<: *defaults
