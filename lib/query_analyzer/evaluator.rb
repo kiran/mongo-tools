@@ -378,8 +378,37 @@ class Evaluator
   end
 
   def check_for_2d_indexes(query_hash, sort_hash, namespace)
-    #TODO
-    []
+    classified_fields = classify_fields(query_hash, sort_hash)
+    return [] if has_suitable_2d_index?(classified_fields, namespace)
+
+    geo_fields = classified_fields[:geospatial_type].uniq
+    return [] if geo_fields.empty?
+
+    # suggest an index on arbitrarily chosen 'geospatial field'
+    geo_field = geo_fields[0]
+    index = {geo_field => Mongo::GEO2D}
+
+    [IndexResult.new(index.to_a, :good)]
+  end
+
+  def has_suitable_2d_index?(classified_fields, namespace)
+    indexes = get_index_information(namespace)
+    indexes.each do |_, index|
+      return true if is_2d_index_suitable?(classified_fields, index["key"])
+    end
+    false
+  end
+
+  def is_2d_index_suitable?(classified_fields, index)
+    geo_fields = classified_fields[:geospatial_type].uniq
+
+    # a suitable index should start with a '2d' field,
+    # the field should be present in geo_fields
+    prefix = index.take_while do |field, type|
+      (geo_fields.include? field) && (type == Mongo::GEO2D)
+    end
+
+    !prefix.empty?
   end
 
   def check_for_2dsphere_indexes(query_hash, sort_hash, namespace)
@@ -426,7 +455,7 @@ class Evaluator
   end
 
   def is_2dsphere_index_ideal?(classified_fields, index)
-    return false if index.values.include?("2d")
+    return false if index.values.include?(Mongo::GEO2D)
 
     eq_fields = classified_fields[:equal_type].uniq
     range_fields = classified_fields[:range_type].uniq
