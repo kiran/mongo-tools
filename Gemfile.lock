@@ -67,6 +67,8 @@ GEM
       thor
     crack (0.3.2)
     diff-lcs (1.2.1)
+    doorkeeper (0.6.7)
+      railties (~> 3.1)
     erubis (2.7.0)
     eventmachine (1.0.3)
     eventmachine (1.0.3-java)
@@ -86,7 +88,6 @@ GEM
     formtastic-bootstrap (2.0.0)
       formtastic (~> 2.2)
       formtastic-bootstrap
-    growl (1.0.3)
     guard (1.7.0)
       formatador (>= 0.2.4)
       listen (>= 0.6.0)
@@ -283,6 +284,7 @@ DEPENDENCIES
   codemirror-rails
   coveralls
   crack
+  doorkeeper (~> 0.6.7)
   formtastic
   formtastic-bootstrap
   guard-jasmine

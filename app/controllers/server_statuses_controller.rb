@@ -1,6 +1,7 @@
 require 'date'
 
 class ServerStatusesController < ApplicationController
+  doorkeeper_for :all, :scopes => [:users]
   def index
   end
   def show

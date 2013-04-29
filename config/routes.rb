@@ -1,4 +1,6 @@
 MongoTools::Application.routes.draw do
+  use_doorkeeper
+
   resources :explorer do
     scope :module => "explorer" do
       resources :collections, :except => [:new], :constraints => { :id => /.*/ } do

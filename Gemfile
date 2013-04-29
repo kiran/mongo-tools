@@ -15,6 +15,7 @@ gem 'formtastic-bootstrap'
 gem 'crack'
 
 gem 'oauth2'
+gem 'doorkeeper', '~> 0.6.7'
 
 gem 'airbrake'
 
