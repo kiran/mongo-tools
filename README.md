@@ -15,3 +15,24 @@ Features:
 * Document Editor
 * REST API
 * Notification & Alerts
+
+Getting Started
+============
+
+Follow these steps to get started with mongotools.
+
+1. Clone the mongotools repo and navigate to your local cloned copy.
+2. Create the mongo dir to hold the log files.  
+`$ mkdir ~/mongo`
+3. Run the setup wizard to create the stats db.  
+`$ rake server:setup`
+4. Start mongotools.  
+`$ bundle exec rails s`
+
+Troubleshooting:
+
+Double check the connection settings located in:  
+`/config/application.yml`
+
+If the above fails, try:  
+`$ mongod --dbpath ~/mongo --port 27018  --fork --logpath ~/mongo/logs`
