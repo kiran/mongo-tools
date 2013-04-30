@@ -9,8 +9,8 @@
 <div class="modal-header">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
     <h3 class="text-center">Create a new collection?</h3>
-  </div>
-  <div class="modal-footer">
+</div>
+ <div class="modal-footer">
     <%= form_tag(explorer_collections_path(current_database_name, current_collection_name), :method=> :post, :id => 'addcollfrm') do %>
       <fieldset>
         <%=text_field_tag 'coll' , '', :placeholder => 'Collection name...', :class => 'colltxt pull-left' %> 
@@ -20,4 +20,41 @@
     <% end %>
   </div>
 </div>
+
+
+<div style ="text-align:right;">
+<div style ="text-align:bottom;">
+<small>
+  <%= link_to "Delete Database", explorer_path(current_database_name), 
+  confirm: "Are you sure you want to delete the database?", 
+  method: :delete, class: "btn btn-danger pull-left" %>
+</small>
 </div>
+
+<div style ="padding-left:140px;">
+<small><%= link_to "Copy Database", "#", id: 'copy-db', class: "btn pull-left" if can_edit? %></small>
+
+
+<div id="create-db-modal" class="modal hide fade">
+  <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h3 class="text-center">Copy 
+  <%= link_to current_database_name, explorer_path(current_database_name) %> 	database?</h3>
+  </div>
+  <div class="modal-footer">
+  	<%= form_tag(edit_explorer_path(current_database_name), :method => :get ,:id => 'copydbfrm') do %>
+      <div id ='Errors'></div>
+      <fieldset>
+        <%=text_field_tag 'db' , '', :placeholder => 'Database name...', :class => 'dbtxt pull-left' %> 
+        <button aria-hidden="true" data-dismiss="modal" class="btn btn-danger">Cancel</button>
+        <%= submit_tag 'Save Database', :id => 'copy_database',:class => 'btn btn-primary copy_db_submit'%>
+    </fieldset>
+  </div>
+</div>
+</div>
+</div>
+
+
+<% end %>
+
+  
