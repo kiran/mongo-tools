@@ -14,12 +14,16 @@ MongoTools::Application.routes.draw do
 
   resources :query_analyzer, :only => [:index]
   root :to => redirect("/explorer")
-
-  resource :server_status, :only => [:index, :show]
-
-  resources :databases, :only => [:index, :show] do
-    resource :sharding_stats, :only => [:index, :show]
+  
+  namespace :api do
+    namespace :v1 do
+      resource :server_status, :only => [:index, :show]
+      resources :databases, :only => [:index, :show] do
+        resource :sharding_stats, :only => [:index, :show]
+      end
+    end
   end
+
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

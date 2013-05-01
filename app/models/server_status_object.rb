@@ -24,6 +24,18 @@ class ServerStatusObject
     self.save
   end
 
+  # Exclude some parameters in the returned JSON result
+  # see example at bottom of file
+  def as_json(options = {})
+    options = { 
+      :include => {:connections => {:except => [:id]}, 
+                   :cursors => {:except => [:id]}, 
+                   :op_counters => {:except => [:id]}}, 
+      :except => [:id]
+    }.update(options)
+    super(options)
+  end
+
   private
   def scrub!(hash)
     # scrubs the keys of the hash to change offending "." and "$" characters
@@ -46,6 +58,8 @@ class ServerStatusObject
   end
 end
 
+
+
 # format:
 # {
 #   "host" : "hostname:port",
@@ -66,6 +80,6 @@ end
 #     "clientCursors_size" : 0,
 #     "timedOut" : 0
 #   },
-#   "localTime" : ISODate("2013-04-01T03:16:43.382Z"),
+#   "timestamp" : ISODate("2013-04-01T03:16:43.382Z"),
 # }
 

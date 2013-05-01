@@ -13,6 +13,8 @@ defaults: &defaults
   airbrake:
     api_key: "fe86f93cb8aadac145b4fc0bc8307515"
     log_development: false
+  api:
+    limit: 100
 
 development:
   <<: *defaults

@@ -1,11 +1,13 @@
 require 'date'
 
-class ServerStatusesController < ApplicationController
+class Api::V1::ServerStatusesController < ApplicationController
   def index
   end
   def show
     from_string = params[:from]
     to_string   = params[:to]
+    limit       = params[:limit] || Settings.api.limit
+
     begin
       from_date = DateTime.strptime(from_string, '%Y%m%d%H%M%S')
     rescue
@@ -24,9 +26,11 @@ class ServerStatusesController < ApplicationController
     
     if from_date != nil
       results = ServerStatusObject.where(:timestamp => 
-        { :$gte => Time.parse(from_date.to_s), :$lt => Time.parse(to_date.to_s) }).all
+        { :$gte => Time.parse(from_date.to_s), :$lt => 
+        Time.parse(to_date.to_s) }).sort(:timestamp.desc).limit(limit)
     else
-      results = ServerStatusObject.where(:timestamp.lt => Time.parse(to_date.to_s)).all
+      results = ServerStatusObject.where(:timestamp.lt => Time.parse(to_date.to_s))
+                .sort(:timestamp.desc).limit(limit)
     end
     
     # example
