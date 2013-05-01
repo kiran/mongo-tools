@@ -25,7 +25,7 @@ Follow these steps to get started with mongotools.
 2. Create the mongo dir to hold the log files.  
 `$ mkdir ~/mongo`
 3. Run the setup wizard to create the stats db.  
-`$ rake server:setup`
+`$ rake setup:server`
 4. Start mongotools.  
 `$ bundle exec rails s`
 
